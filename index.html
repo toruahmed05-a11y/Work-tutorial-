@@ -222,7 +222,8 @@
             settings: {
                 telegramSupport: 'https://t.me/support',
                 officialChannel: 'https://t.me/channel',
-                startWorking: 'https://example.com/start'
+                startWorking: 'https://example.com/start',
+                noticeBanner: 'https://placehold.co/800x450/1e293b/94a3b8?text=Premium+Banner'
             },
             searchQuery: '',
             selectedCategory: 'All',
@@ -415,8 +416,6 @@
                     clearTimeout(window.searchTimeout);
                     window.searchTimeout = setTimeout(render, 300);
                 });
-                searchInput.focus();
-                searchInput.setSelectionRange(searchInput.value.length, searchInput.value.length);
             }
         }
 
@@ -432,16 +431,11 @@
 
             return `
                 <div class="fade-in pb-8">
-                    <!-- Hero Banner -->
-                    <div class="bg-gradient-to-br from-blue-600 to-indigo-700 p-6 rounded-b-3xl shadow-lg relative overflow-hidden">
-                        <div class="absolute top-0 right-0 -mt-10 -mr-10 opacity-20">
-                            <i class="ph-fill ph-code text-9xl"></i>
+                    <!-- Notice Banner (16:9) -->
+                    <div class="pt-6 px-6 mb-2">
+                        <div class="w-full aspect-video rounded-2xl overflow-hidden relative shadow-lg border border-slate-800 bg-slate-900">
+                            <img src="${state.settings.noticeBanner || 'https://placehold.co/800x450/1e293b/94a3b8?text=Notice+Banner'}" class="w-full h-full object-cover transition-transform duration-500 hover:scale-105" onerror="this.src='https://placehold.co/800x450/1e293b/94a3b8?text=Notice+Banner'">
                         </div>
-                        <h2 class="text-3xl font-bold text-white mb-2 relative z-10">Learn & Build</h2>
-                        <p class="text-blue-100 text-sm max-w-[80%] relative z-10">Access premium tutorials, tools, and resources to accelerate your journey.</p>
-                        <button data-action="nav-videos" class="mt-4 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white px-5 py-2 rounded-full text-sm font-medium transition-colors relative z-10">
-                            Start Learning
-                        </button>
                     </div>
 
                     ${featured.length > 0 ? `
@@ -817,14 +811,15 @@
 
         function buildAdminVideos() {
             return `
-                <div class="fade-in p-6 h-full flex flex-col">
+                <div class="fade-in p-6 pb-20">
                     <div class="flex items-center justify-between mb-6">
-                        <button data-action="nav-admin" class="text-slate-400 hover:text-white"><i class="ph ph-arrow-left text-2xl"></i></button>
+                        <button data-action="nav-admin-dashboard" class="text-slate-400 hover:text-white"><i class="ph ph-arrow-left text-2xl"></i></button>
                         <h1 class="text-xl font-bold text-white">Manage Videos</h1>
                         <button data-action="modal-video-add" class="bg-blue-600 text-white w-8 h-8 rounded-full flex items-center justify-center hover:bg-blue-500"><i class="ph ph-plus-bold"></i></button>
                     </div>
 
-                    <div class="space-y-3 flex-1 overflow-y-auto no-scrollbar pb-10">
+                    <div class="space-y-3">
+                        ${state.videos.length === 0 ? '<div class="text-center text-slate-500 py-10">No videos found. Click + to add.</div>' : ''}
                         ${state.videos.map(v => `
                             <div class="bg-slate-900 border border-slate-800 p-3 rounded-2xl flex gap-3 items-center">
                                 <img src="${v.thumbnail}" class="w-16 h-12 object-cover rounded-lg bg-slate-800 shrink-0">
@@ -848,14 +843,15 @@
 
         function buildAdminTools() {
             return `
-                <div class="fade-in p-6 h-full flex flex-col">
+                <div class="fade-in p-6 pb-20">
                     <div class="flex items-center justify-between mb-6">
-                        <button data-action="nav-admin" class="text-slate-400 hover:text-white"><i class="ph ph-arrow-left text-2xl"></i></button>
+                        <button data-action="nav-admin-dashboard" class="text-slate-400 hover:text-white"><i class="ph ph-arrow-left text-2xl"></i></button>
                         <h1 class="text-xl font-bold text-white">Manage Tools</h1>
                         <button data-action="modal-tool-add" class="bg-amber-600 text-white w-8 h-8 rounded-full flex items-center justify-center hover:bg-amber-500"><i class="ph ph-plus-bold"></i></button>
                     </div>
 
-                    <div class="space-y-3 flex-1 overflow-y-auto no-scrollbar pb-10">
+                    <div class="space-y-3">
+                        ${state.tools.length === 0 ? '<div class="text-center text-slate-500 py-10">No tools found. Click + to add.</div>' : ''}
                         ${state.tools.map(t => `
                             <div class="bg-slate-900 border border-slate-800 p-3 rounded-2xl flex gap-3 items-center">
                                 <img src="${t.thumbnail}" class="w-12 h-12 object-cover rounded-xl bg-slate-800 shrink-0">
@@ -879,13 +875,29 @@
 
         function buildAdminSettings() {
             return `
-                <div class="fade-in p-6">
+                <div class="fade-in p-6 pb-20">
                     <div class="flex items-center gap-3 mb-8">
-                        <button data-action="nav-admin" class="text-slate-400 hover:text-white"><i class="ph ph-arrow-left text-2xl"></i></button>
-                        <h1 class="text-xl font-bold text-white">Support Links</h1>
+                        <button data-action="nav-admin-dashboard" class="text-slate-400 hover:text-white"><i class="ph ph-arrow-left text-2xl"></i></button>
+                        <h1 class="text-xl font-bold text-white">Settings</h1>
                     </div>
 
                     <div class="space-y-4">
+                        <!-- Notice Banner Settings -->
+                        <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl mb-6">
+                            <h2 class="text-sm font-semibold text-slate-200 mb-3 flex items-center gap-2">
+                                <i class="ph-fill ph-image text-blue-500"></i> Notice Banner (16:9)
+                            </h2>
+                            <div class="mb-3">
+                                <label class="block text-xs font-medium text-slate-400 mb-2">Upload Image</label>
+                                <input type="file" id="set-banner-file" accept="image/*" class="text-xs text-slate-400 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-slate-800 file:text-blue-400 hover:file:bg-slate-700 w-full">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-slate-400 mb-1">Or Paste Image URL</label>
+                                <input type="url" id="set-banner-url" value="${state.settings.noticeBanner || ''}" placeholder="https://..." class="w-full bg-slate-950 text-white rounded-xl px-4 py-3 border border-slate-800 focus:border-purple-500 outline-none text-sm">
+                            </div>
+                        </div>
+
+                        <!-- Support Links Settings -->
                         <div>
                             <label class="block text-xs font-medium text-slate-400 mb-1">Telegram Support URL</label>
                             <input type="url" id="set-support" value="${state.settings.telegramSupport}" class="w-full bg-slate-900 text-white rounded-xl px-4 py-3 border border-slate-800 focus:border-purple-500 outline-none text-sm">
@@ -899,7 +911,7 @@
                             <input type="url" id="set-work" value="${state.settings.startWorking}" class="w-full bg-slate-900 text-white rounded-xl px-4 py-3 border border-slate-800 focus:border-purple-500 outline-none text-sm">
                         </div>
                         
-                        <button data-action="save-settings" class="w-full mt-4 bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 rounded-xl transition-colors">
+                        <button data-action="save-settings" class="w-full mt-4 bg-purple-600 hover:bg-purple-500 text-white font-bold py-3.5 rounded-xl transition-colors shadow-lg shadow-purple-900/30">
                             Save Changes
                         </button>
                     </div>
@@ -1283,15 +1295,41 @@
             // Settings & Categories
             if (action === 'save-settings') {
                 if(!state.isAdmin) return showToast('Not authorized', 'error');
-                const payload = {
-                    telegramSupport: document.getElementById('set-support').value.trim(),
-                    officialChannel: document.getElementById('set-channel').value.trim(),
-                    startWorking: document.getElementById('set-work').value.trim()
-                };
+                
+                const btnText = btn.innerHTML;
+                btn.innerHTML = '<i class="ph ph-spinner animate-spin"></i> Saving...';
+                btn.disabled = true;
+
                 try {
+                    let bannerUrl = document.getElementById('set-banner-url').value.trim();
+                    const bannerFile = document.getElementById('set-banner-file');
+                    
+                    // Handle image upload if a file was selected
+                    if (bannerFile && bannerFile.files.length > 0) {
+                        try {
+                            bannerUrl = await uploadFileToStorage(bannerFile.files[0], 'banners');
+                        } catch(err) {
+                            console.error(err);
+                            showToast("Image upload failed, using URL fallback if provided", "error");
+                        }
+                    }
+
+                    const payload = {
+                        telegramSupport: document.getElementById('set-support').value.trim(),
+                        officialChannel: document.getElementById('set-channel').value.trim(),
+                        startWorking: document.getElementById('set-work').value.trim(),
+                        noticeBanner: bannerUrl || state.settings.noticeBanner || ''
+                    };
+                    
                     await setDoc(doc(getCollectionPath('settings'), 'support_links'), payload, { merge: true });
-                    showToast('Settings saved', 'success');
-                } catch(e) { showToast('Failed to save', 'error'); }
+                    showToast('Settings saved successfully', 'success');
+                } catch(e) { 
+                    console.error(e);
+                    showToast('Failed to save settings', 'error'); 
+                } finally {
+                    btn.innerHTML = btnText;
+                    btn.disabled = false;
+                }
             }
             if (action === 'add-category') {
                 const name = document.getElementById('new-cat').value.trim();
