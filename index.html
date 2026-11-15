@@ -643,6 +643,7 @@
 
             const cat = state.categories.find(c => c.id === video.categoryId)?.name || 'Misc';
             const ytId = extractYTId(video.videoUrl || '');
+            const isFirebaseVideo = video.videoUrl && video.videoUrl.includes('firebasestorage.googleapis.com');
 
             // Basic Markdown for Guide
             const formatGuide = (text) => {
@@ -669,9 +670,11 @@
                     </div>
 
                     <div class="w-full aspect-video bg-black sticky top-[65px] z-40 shadow-xl border-b border-slate-800">
-                        ${ytId ? 
+                        ${isFirebaseVideo ? 
+                            `<video class="w-full h-full" src="${video.videoUrl}" controls controlsList="nodownload"></video>`
+                        : ytId ? 
                             `<iframe class="w-full h-full" src="https://www.youtube.com/embed/${ytId}?autoplay=1&rel=0" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>` 
-                            : `<div class="w-full h-full flex flex-col items-center justify-center text-slate-500"><i class="ph ph-warning-circle text-4xl mb-2"></i><span>Invalid YouTube URL</span></div>`
+                        : `<div class="w-full h-full flex flex-col items-center justify-center text-slate-500"><i class="ph ph-warning-circle text-4xl mb-2"></i><span>Invalid Video Source</span></div>`
                         }
                     </div>
 
@@ -815,7 +818,7 @@
                     <div class="flex items-center justify-between mb-6">
                         <button data-action="nav-admin-dashboard" class="text-slate-400 hover:text-white"><i class="ph ph-arrow-left text-2xl"></i></button>
                         <h1 class="text-xl font-bold text-white">Manage Videos</h1>
-                        <button data-action="modal-video-add" class="bg-blue-600 text-white w-8 h-8 rounded-full flex items-center justify-center hover:bg-blue-500"><i class="ph ph-plus-bold"></i></button>
+                        <button data-action="modal-video-add" class="bg-blue-600 text-white px-4 py-2 rounded-xl flex items-center justify-center hover:bg-blue-500 font-medium gap-2 shadow-lg shadow-blue-900/50"><i class="ph ph-plus-bold"></i> Add Video</button>
                     </div>
 
                     <div class="space-y-3">
@@ -847,7 +850,7 @@
                     <div class="flex items-center justify-between mb-6">
                         <button data-action="nav-admin-dashboard" class="text-slate-400 hover:text-white"><i class="ph ph-arrow-left text-2xl"></i></button>
                         <h1 class="text-xl font-bold text-white">Manage Tools</h1>
-                        <button data-action="modal-tool-add" class="bg-amber-600 text-white w-8 h-8 rounded-full flex items-center justify-center hover:bg-amber-500"><i class="ph ph-plus-bold"></i></button>
+                        <button data-action="modal-tool-add" class="bg-amber-600 text-white px-4 py-2 rounded-xl flex items-center justify-center hover:bg-amber-500 font-medium gap-2 shadow-lg shadow-amber-900/50"><i class="ph ph-plus-bold"></i> Add Tool</button>
                     </div>
 
                     <div class="space-y-3">
@@ -883,18 +886,12 @@
 
                     <div class="space-y-4">
                         <!-- Notice Banner Settings -->
-                        <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl mb-6">
-                            <h2 class="text-sm font-semibold text-slate-200 mb-3 flex items-center gap-2">
-                                <i class="ph-fill ph-image text-blue-500"></i> Notice Banner (16:9)
-                            </h2>
-                            <div class="mb-3">
-                                <label class="block text-xs font-medium text-slate-400 mb-2">Upload Image</label>
-                                <input type="file" id="set-banner-file" accept="image/*" class="text-xs text-slate-400 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-slate-800 file:text-blue-400 hover:file:bg-slate-700 w-full">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-medium text-slate-400 mb-1">Or Paste Image URL</label>
-                                <input type="url" id="set-banner-url" value="${state.settings.noticeBanner || ''}" placeholder="https://..." class="w-full bg-slate-950 text-white rounded-xl px-4 py-3 border border-slate-800 focus:border-purple-500 outline-none text-sm">
-                            </div>
+                        <div class="bg-slate-900 border-2 border-dashed border-slate-700 p-5 rounded-2xl mb-6 text-center">
+                            <i class="ph-fill ph-image text-3xl text-blue-500 mb-2"></i>
+                            <h2 class="text-sm font-bold text-slate-200 mb-2">Notice Banner (16:9)</h2>
+                            <div class="text-[10px] text-slate-400 mb-4">Upload image to Postimages.org and paste the Direct Link here</div>
+                            
+                            <input type="url" id="set-banner-url" value="${state.settings.noticeBanner || ''}" placeholder="https://..." class="w-full bg-slate-950 text-white rounded-xl px-4 py-3 border border-slate-800 focus:border-purple-500 outline-none text-sm">
                         </div>
 
                         <!-- Support Links Settings -->
@@ -962,13 +959,16 @@
                 <form id="videoForm" class="space-y-4">
                     <input type="hidden" id="v_id" value="${v.id || ''}">
                     <div>
-                        <label class="block text-xs font-medium text-slate-400 mb-1">Title</label>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Video Title</label>
                         <input type="text" id="v_title" required value="${v.title || ''}" class="w-full bg-slate-950 text-white rounded-xl px-4 py-3 border border-slate-800 focus:border-blue-500 outline-none text-sm">
                     </div>
-                    <div>
-                        <label class="block text-xs font-medium text-slate-400 mb-1">YouTube URL</label>
-                        <input type="url" id="v_url" required value="${v.videoUrl || ''}" class="w-full bg-slate-950 text-white rounded-xl px-4 py-3 border border-slate-800 focus:border-blue-500 outline-none text-sm">
+
+                    <div class="bg-slate-900 border border-slate-700 p-4 rounded-xl">
+                        <label class="block text-sm font-bold text-blue-400 mb-1">YouTube Video Link</label>
+                        <div class="text-[10px] text-slate-500 mb-3">Paste YouTube URL (or direct MP4 link)</div>
+                        <input type="url" id="v_url" value="${v.videoUrl || ''}" placeholder="https://youtube.com/..." class="w-full bg-slate-950 text-white rounded-lg px-3 py-3 border border-slate-800 focus:border-blue-500 outline-none text-sm">
                     </div>
+                    
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="block text-xs font-medium text-slate-400 mb-1">Category</label>
@@ -982,13 +982,10 @@
                         </div>
                     </div>
                     
-                    <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
-                        <label class="block text-xs font-medium text-slate-400 mb-2">Thumbnail</label>
-                        <div class="flex gap-2 mb-2">
-                            <input type="file" id="v_file" accept="image/*" class="text-xs text-slate-400 file:mr-2 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-slate-800 file:text-blue-400 hover:file:bg-slate-700 w-full">
-                        </div>
-                        <div class="text-center text-xs text-slate-500 mb-2">- OR PASTE URL -</div>
-                        <input type="url" id="v_thumb_url" value="${v.thumbnail || ''}" placeholder="Leave empty to auto-fetch YT" class="w-full bg-slate-900 text-white rounded-lg px-3 py-2 border border-slate-800 outline-none text-sm">
+                    <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Thumbnail Image URL</label>
+                        <div class="text-[10px] text-slate-500 mb-3">Leave empty to auto-fetch YouTube thumbnail</div>
+                        <input type="url" id="v_thumb_url" value="${v.thumbnail || ''}" placeholder="https://..." class="w-full bg-slate-900 text-white rounded-lg px-3 py-3 border border-slate-800 outline-none text-sm">
                     </div>
 
                     <div class="flex items-center justify-between bg-slate-950 p-3 rounded-xl border border-slate-800">
@@ -1031,10 +1028,16 @@
                 <form id="toolForm" class="space-y-4">
                     <input type="hidden" id="t_id" value="${t.id || ''}">
                     <div>
-                        <label class="block text-xs font-medium text-slate-400 mb-1">Title</label>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Tool Title</label>
                         <input type="text" id="t_title" required value="${t.title || ''}" class="w-full bg-slate-950 text-white rounded-xl px-4 py-3 border border-slate-800 focus:border-amber-500 outline-none text-sm">
                     </div>
                     
+                    <div class="bg-slate-900 border border-slate-700 p-4 rounded-xl">
+                        <label class="block text-sm font-bold text-amber-400 mb-1">External Download Link</label>
+                        <div class="text-[10px] text-slate-500 mb-3">Paste Drive, Mediafire or Direct link</div>
+                        <input type="url" id="t_file_url" value="${t.fileUrl || ''}" placeholder="https://..." class="w-full bg-slate-950 text-white rounded-lg px-3 py-3 border border-slate-800 focus:border-amber-500 outline-none text-sm">
+                    </div>
+
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="block text-xs font-medium text-slate-400 mb-1">File Type</label>
@@ -1046,18 +1049,10 @@
                         </div>
                     </div>
 
-                    <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
-                        <label class="block text-xs font-medium text-slate-400 mb-2">Tool File (Upload)</label>
-                        <input type="file" id="t_file_upload" class="text-xs text-slate-400 file:mr-2 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-slate-800 file:text-amber-400 hover:file:bg-slate-700 w-full mb-2">
-                        <div class="text-center text-xs text-slate-500 mb-2">- OR EXTERNAL LINK -</div>
-                        <input type="url" id="t_file_url" value="${t.fileUrl || ''}" placeholder="https://..." class="w-full bg-slate-900 text-white rounded-lg px-3 py-2 border border-slate-800 outline-none text-sm">
-                    </div>
-
-                    <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
-                        <label class="block text-xs font-medium text-slate-400 mb-2">Icon/Thumbnail Image</label>
-                        <input type="file" id="t_thumb_upload" accept="image/*" class="text-xs text-slate-400 file:mr-2 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-slate-800 file:text-blue-400 hover:file:bg-slate-700 w-full mb-2">
-                        <div class="text-center text-xs text-slate-500 mb-2">- OR IMAGE URL -</div>
-                        <input type="url" id="t_thumb_url" value="${t.thumbnail || ''}" placeholder="https://..." class="w-full bg-slate-900 text-white rounded-lg px-3 py-2 border border-slate-800 outline-none text-sm">
+                    <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Icon/Thumbnail Image URL</label>
+                        <div class="text-[10px] text-slate-500 mb-3">Paste image link from Postimages.org</div>
+                        <input type="url" id="t_thumb_url" value="${t.thumbnail || ''}" placeholder="https://..." class="w-full bg-slate-900 text-white rounded-lg px-3 py-3 border border-slate-800 outline-none text-sm">
                     </div>
 
                     <div>
@@ -1156,28 +1151,19 @@
             // Save Entities
             if (action === 'save-video') {
                 if(!state.isAdmin) return showToast('Not authorized', 'error');
-                const formId = document.getElementById('v_id').value;
-                const title = document.getElementById('v_title').value.trim();
-                const url = document.getElementById('v_url').value.trim();
-                
-                if(!title || !url) return showToast('Title and URL required', 'error');
                 
                 const btnText = btn.innerHTML;
-                btn.innerHTML = '<i class="ph ph-spinner animate-spin"></i> Saving...';
                 btn.disabled = true;
+                btn.innerHTML = '<i class="ph ph-spinner animate-spin"></i> Saving...';
 
                 try {
-                    let thumbUrl = document.getElementById('v_thumb_url').value.trim();
-                    const fileInput = document.getElementById('v_file');
+                    const formId = document.getElementById('v_id').value;
+                    const title = document.getElementById('v_title').value.trim();
+                    let url = document.getElementById('v_url').value.trim();
                     
-                    if (fileInput.files.length > 0) {
-                        try {
-                            thumbUrl = await uploadFileToStorage(fileInput.files[0], 'thumbnails');
-                        } catch(err) {
-                            console.error(err);
-                            showToast("Storage upload failed, using URL fallback if provided", "error");
-                        }
-                    }
+                    if(!title || !url) throw new Error('Title and Video URL are required');
+                    
+                    let thumbUrl = document.getElementById('v_thumb_url').value.trim();
 
                     if (!thumbUrl) {
                         const ytId = extractYTId(url);
@@ -1205,11 +1191,11 @@
                     }
 
                     await setDoc(doc(getCollectionPath('videos'), docId), payload, { merge: true });
-                    showToast('Video saved', 'success');
+                    showToast('Video saved successfully', 'success');
                     closeModal();
                 } catch(e) {
                     console.error(e);
-                    showToast('Failed to save', 'error');
+                    showToast(e.message || 'Failed to save', 'error');
                 } finally {
                     btn.innerHTML = btnText;
                     btn.disabled = false;
@@ -1218,40 +1204,25 @@
 
             if (action === 'save-tool') {
                 if(!state.isAdmin) return showToast('Not authorized', 'error');
-                const formId = document.getElementById('t_id').value;
-                const title = document.getElementById('t_title').value.trim();
                 
-                if(!title) return showToast('Title is required', 'error');
-
                 const btnText = btn.innerHTML;
-                btn.innerHTML = '<i class="ph ph-spinner animate-spin"></i> Saving...';
                 btn.disabled = true;
+                btn.innerHTML = '<i class="ph ph-spinner animate-spin"></i> Saving...';
 
                 try {
+                    const formId = document.getElementById('t_id').value;
+                    const title = document.getElementById('t_title').value.trim();
+                    if(!title) throw new Error('Title is required');
+
                     let fileUrl = document.getElementById('t_file_url').value.trim();
-                    const fileUpload = document.getElementById('t_file_upload');
-                    if (fileUpload.files.length > 0) {
-                        try {
-                            fileUrl = await uploadFileToStorage(fileUpload.files[0], 'tools');
-                        } catch(err) {
-                            console.error(err);
-                            showToast("File upload failed, ensure URL is provided", "error");
-                        }
-                    }
-                    if(!fileUrl) throw new Error("A File URL or Upload is required");
+                    if(!fileUrl) throw new Error("A Download Link is required");
 
                     let thumbUrl = document.getElementById('t_thumb_url').value.trim();
-                    const thumbUpload = document.getElementById('t_thumb_upload');
-                    if (thumbUpload.files.length > 0) {
-                        try {
-                            thumbUrl = await uploadFileToStorage(thumbUpload.files[0], 'thumbnails');
-                        } catch(err) { console.error(err); }
-                    }
                     if(!thumbUrl) thumbUrl = 'https://placehold.co/100/1e293b/94a3b8?text=Tool';
 
                     const payload = {
                         title,
-                        fileType: document.getElementById('t_type').value.trim() || 'FILE',
+                        fileType: document.getElementById('t_type').value.trim() || 'APK',
                         size: document.getElementById('t_size').value.trim(),
                         fileUrl,
                         thumbnail: thumbUrl,
@@ -1267,7 +1238,7 @@
                     }
 
                     await setDoc(doc(getCollectionPath('tools'), docId), payload, { merge: true });
-                    showToast('Tool saved', 'success');
+                    showToast('Tool saved successfully', 'success');
                     closeModal();
                 } catch(e) {
                     console.error(e);
@@ -1297,22 +1268,11 @@
                 if(!state.isAdmin) return showToast('Not authorized', 'error');
                 
                 const btnText = btn.innerHTML;
-                btn.innerHTML = '<i class="ph ph-spinner animate-spin"></i> Saving...';
                 btn.disabled = true;
+                btn.innerHTML = '<i class="ph ph-spinner animate-spin"></i> Saving Settings...';
 
                 try {
                     let bannerUrl = document.getElementById('set-banner-url').value.trim();
-                    const bannerFile = document.getElementById('set-banner-file');
-                    
-                    // Handle image upload if a file was selected
-                    if (bannerFile && bannerFile.files.length > 0) {
-                        try {
-                            bannerUrl = await uploadFileToStorage(bannerFile.files[0], 'banners');
-                        } catch(err) {
-                            console.error(err);
-                            showToast("Image upload failed, using URL fallback if provided", "error");
-                        }
-                    }
 
                     const payload = {
                         telegramSupport: document.getElementById('set-support').value.trim(),
@@ -1325,7 +1285,7 @@
                     showToast('Settings saved successfully', 'success');
                 } catch(e) { 
                     console.error(e);
-                    showToast('Failed to save settings', 'error'); 
+                    showToast(e.message || 'Failed to save settings', 'error'); 
                 } finally {
                     btn.innerHTML = btnText;
                     btn.disabled = false;
