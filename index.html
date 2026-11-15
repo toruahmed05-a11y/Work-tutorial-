@@ -44,6 +44,7 @@
             background-color: #020617;
             color: #f8fafc;
             -webkit-tap-highlight-color: transparent;
+            zoom: 0.95; /* Page zoom out to prevent scrolling for nav */
         }
 
         .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -72,6 +73,9 @@
             -webkit-backdrop-filter: blur(12px);
             border-top: 1px solid rgba(255,255,255,0.05);
         }
+        
+        /* Hides bottom nav when virtual keyboard is open */
+        .keyboard-hidden { display: none !important; }
 
         /* Custom Range Slider for Admin UI adjustments if needed */
         input[type=range] { -webkit-appearance: none; background: transparent; }
@@ -128,7 +132,7 @@
         <!-- Top Header -->
         <header class="h-16 flex items-center justify-between px-6 bg-slate-900/90 backdrop-blur-md sticky top-0 z-40 border-b border-slate-800">
             <h1 class="text-xl font-bold bg-gradient-to-r from-blue-400 to-indigo-500 bg-clip-text text-transparent flex items-center gap-2">
-                <i class="ph-fill ph-rocket-launch text-blue-500"></i> DevHub
+                <i class="ph-fill ph-rocket-launch text-blue-500"></i> WorkHub
             </h1>
             <button id="admin-btn" data-action="go-admin" class="hidden w-10 h-10 rounded-full flex items-center justify-center text-slate-500 hover:text-white transition-colors bg-slate-800/50">
                 <i class="ph ph-lock-key text-lg"></i>
@@ -137,13 +141,11 @@
 
         <!-- Dynamic View Container -->
         <main id="view-container" class="flex-1 overflow-y-auto overflow-x-hidden pb-24 no-scrollbar bg-slate-950">
-            <div class="flex items-center justify-center h-full">
-                <i class="ph ph-spinner-gap animate-spin text-4xl text-blue-500"></i>
-            </div>
+            <!-- Renders dynamically -->
         </main>
 
         <!-- Bottom Navigation (4 Tabs) -->
-        <nav id="bottom-nav" class="hidden absolute bottom-0 w-full glass-nav px-4 py-3 pb-safe z-50">
+        <nav id="bottom-nav" class="hidden absolute bottom-0 w-full glass-nav px-4 py-3 pb-safe z-50 transition-transform">
             <div class="flex justify-between items-center max-w-sm mx-auto">
                 <button data-action="nav-home" class="nav-btn flex flex-col items-center flex-1 text-slate-400 hover:text-blue-400 transition-colors">
                     <i class="ph ph-house text-2xl mb-1 transition-transform"></i>
@@ -210,6 +212,20 @@
             tg.setBackgroundColor('#020617');
         }
 
+        // Global Keyboard/Input handler to hide bottom nav to prevent layout jump
+        document.addEventListener('focusin', (e) => {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+                document.getElementById('bottom-nav')?.classList.add('keyboard-hidden');
+            }
+        });
+        document.addEventListener('focusout', (e) => {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+                setTimeout(() => {
+                    document.getElementById('bottom-nav')?.classList.remove('keyboard-hidden');
+                }, 100);
+            }
+        });
+
         // App State
         const state = {
             user: null,
@@ -273,6 +289,14 @@
             return new Date(ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
         }
 
+        // Automatically append MB if user only provided a number
+        function formatSize(size) {
+            if(!size) return 'Unknown size';
+            const s = size.toString().trim();
+            if(/[a-zA-Z]/.test(s)) return s; // already contains letters (MB, GB, etc.)
+            return s + ' MB';
+        }
+
         // --- Firebase Data Fetching ---
         function getCollectionPath(collectionName) {
             // STRICT RULE: path structure
@@ -284,16 +308,14 @@
                 if (initialAuthToken) {
                     await signInWithCustomToken(auth, initialAuthToken);
                 } else {
-                    // এটি শুধুমাত্র ডাটাবেজ থেকে ভিডিও পড়ার জন্য একটি গেস্ট কানেকশন, কোনো ইউজার ডেটা সেভ হয় না।
+                    // Guest connection
                     await signInAnonymously(auth);
                 }
                 state.user = auth.currentUser;
             } catch (error) {
-                // কোনো এরর হলে ইউজারকে না দেখিয়ে সাইলেন্টলি ইগনোর করবে এবং পাবলিক ভিডিও লোড করবে
                 console.warn("Guest connection skipped. Loading public data...", error);
             } finally {
                 setupDataListeners();
-                render();
             }
         }
 
@@ -326,7 +348,7 @@
                 if (docSnap.exists()) {
                     state.settings = { ...state.settings, ...docSnap.data() };
                 }
-                if(['support', 'admin-settings'].includes(state.currentView)) render();
+                if(['home', 'support', 'admin-settings'].includes(state.currentView)) render();
             }, (e) => console.error(e));
 
             state.unsubscribes.push(unsubVideos, unsubTools, unsubCats, unsubSettings);
@@ -338,19 +360,6 @@
                 const id = generateId();
                 await setDoc(doc(getCollectionPath('categories'), id), { id, name });
             }
-        }
-
-        // --- File Upload Helper ---
-        async function uploadFileToStorage(file, folder) {
-            if(!storage || !firebaseConfig.storageBucket || firebaseConfig.storageBucket === 'mock') {
-                throw new Error("Storage not configured");
-            }
-            const fileExt = file.name.split('.').pop();
-            const fileName = `${Date.now()}_${generateId()}.${fileExt}`;
-            const storageRef = ref(storage, `${appId}/${folder}/${fileName}`);
-            
-            await uploadBytes(storageRef, file);
-            return await getDownloadURL(storageRef);
         }
 
         // --- Rendering Engine ---
@@ -406,15 +415,22 @@
             }
         }
 
+        // Handles purely Debounced search logic without breaking input focus
         function attachDynamicListeners() {
-            // Restore focus and cursor for search inputs if they exist in the new view
             const searchInput = document.getElementById('searchInput');
             if (searchInput) {
                 searchInput.addEventListener('input', (e) => {
                     state.searchQuery = e.target.value.toLowerCase();
-                    // Debounce rendering
                     clearTimeout(window.searchTimeout);
-                    window.searchTimeout = setTimeout(render, 300);
+                    window.searchTimeout = setTimeout(() => {
+                        if (state.currentView === 'videos') {
+                            const container = document.getElementById('video-list-container');
+                            if(container) container.innerHTML = generateVideoListHTML();
+                        } else if (state.currentView === 'tools') {
+                            const container = document.getElementById('tool-list-container');
+                            if(container) container.innerHTML = generateToolListHTML();
+                        }
+                    }, 300);
                 });
             }
         }
@@ -431,10 +447,10 @@
 
             return `
                 <div class="fade-in pb-8">
-                    <!-- Notice Banner (16:9) -->
+                    <!-- Notice Banner (16:9) loaded instantly -->
                     <div class="pt-6 px-6 mb-2">
                         <div class="w-full aspect-video rounded-2xl overflow-hidden relative shadow-lg border border-slate-800 bg-slate-900">
-                            <img src="${state.settings.noticeBanner || 'https://placehold.co/800x450/1e293b/94a3b8?text=Notice+Banner'}" class="w-full h-full object-cover transition-transform duration-500 hover:scale-105" onerror="this.src='https://placehold.co/800x450/1e293b/94a3b8?text=Notice+Banner'">
+                            <img src="${state.settings.noticeBanner || 'https://placehold.co/800x450/1e293b/94a3b8?text=Premium+Banner'}" class="w-full h-full object-cover transition-transform duration-500 hover:scale-105" onerror="this.src='https://placehold.co/800x450/1e293b/94a3b8?text=Notice+Banner'">
                         </div>
                     </div>
 
@@ -446,8 +462,8 @@
                         <div class="flex gap-4 overflow-x-auto no-scrollbar pb-4 snap-x">
                             ${featured.map(v => `
                                 <div data-action="view-video" data-id="${v.id}" class="snap-start shrink-0 w-64 group cursor-pointer">
-                                    <div class="w-full aspect-video rounded-2xl bg-slate-800 overflow-hidden relative mb-3">
-                                        <img src="${v.thumbnail}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" onerror="this.src='https://placehold.co/600x400/1e293b/94a3b8?text=No+Image'">
+                                    <div class="w-full aspect-video rounded-2xl bg-black overflow-hidden relative mb-3 border border-slate-800">
+                                        <img src="${v.thumbnail}" class="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500" onerror="this.src='https://placehold.co/600x400/1e293b/94a3b8?text=No+Image'">
                                         <div class="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors"></div>
                                         <div class="absolute bottom-2 right-2 bg-black/70 px-2 py-1 rounded text-[10px] font-medium text-white backdrop-blur-sm">${v.duration || '00:00'}</div>
                                     </div>
@@ -481,16 +497,44 @@
             `;
         }
 
-        function buildVideosView() {
+        // Isolated Videos List Html Generator for Debounce UI
+        function generateVideoListHTML() {
             let pubVideos = state.videos.filter(v => v.status === 'published');
-            
-            if (state.selectedCategory !== 'All') {
-                pubVideos = pubVideos.filter(v => v.categoryId === state.selectedCategory);
-            }
-            if (state.searchQuery) {
-                pubVideos = pubVideos.filter(v => v.title.toLowerCase().includes(state.searchQuery));
-            }
+            if (state.selectedCategory !== 'All') pubVideos = pubVideos.filter(v => v.categoryId === state.selectedCategory);
+            if (state.searchQuery) pubVideos = pubVideos.filter(v => v.title.toLowerCase().includes(state.searchQuery));
 
+            if(pubVideos.length === 0) {
+                return `
+                    <div class="flex flex-col items-center justify-center py-12 text-slate-500 fade-in">
+                        <i class="ph ph-video-camera-slash text-5xl mb-3"></i>
+                        <p>No tutorials found.</p>
+                    </div>
+                `;
+            }
+            return pubVideos.map(v => {
+                const cat = state.categories.find(c => c.id === v.categoryId)?.name || 'Misc';
+                return `
+                    <div data-action="view-video" data-id="${v.id}" class="group cursor-pointer flex gap-4 bg-slate-900 p-3 rounded-2xl border border-slate-800 hover:border-slate-700 transition-colors fade-in">
+                        <div class="w-32 h-24 shrink-0 rounded-xl overflow-hidden relative bg-black border border-slate-800/50">
+                            <img src="${v.thumbnail}" class="w-full h-full object-contain" onerror="this.src='https://placehold.co/300x200/1e293b/94a3b8?text=Video'">
+                            <div class="absolute bottom-1 right-1 bg-black/80 px-1.5 py-0.5 rounded text-[9px] font-medium text-white">${v.duration || '00:00'}</div>
+                        </div>
+                        <div class="flex-1 min-w-0 py-1 flex flex-col justify-between">
+                            <div>
+                                <span class="text-[10px] font-semibold text-blue-400 uppercase tracking-wider">${cat}</span>
+                                <h3 class="text-sm font-semibold text-slate-100 leading-tight mt-0.5 line-clamp-2">${v.title}</h3>
+                            </div>
+                            <div class="flex items-center text-xs text-slate-500 gap-3 mt-2">
+                                <span class="flex items-center gap-1"><i class="ph ph-eye"></i> ${v.views || 0}</span>
+                                <span>${formatDate(v.createdAt)}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function buildVideosView() {
             return `
                 <div class="fade-in h-full flex flex-col">
                     <div class="sticky top-0 z-30 bg-slate-950/95 backdrop-blur-md pt-6 pb-2 px-6 border-b border-slate-800">
@@ -508,77 +552,61 @@
                         </div>
                     </div>
 
-                    <div class="px-6 py-6 space-y-6 flex-1 overflow-y-auto">
-                        ${pubVideos.length === 0 ? `
-                            <div class="flex flex-col items-center justify-center py-12 text-slate-500">
-                                <i class="ph ph-video-camera-slash text-5xl mb-3"></i>
-                                <p>No tutorials found.</p>
-                            </div>
-                        ` : ''}
-                        ${pubVideos.map(v => {
-                            const cat = state.categories.find(c => c.id === v.categoryId)?.name || 'Misc';
-                            return `
-                                <div data-action="view-video" data-id="${v.id}" class="group cursor-pointer flex gap-4 bg-slate-900 p-3 rounded-2xl border border-slate-800 hover:border-slate-700 transition-colors">
-                                    <div class="w-32 h-24 shrink-0 rounded-xl overflow-hidden relative bg-slate-800">
-                                        <img src="${v.thumbnail}" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/300x200/1e293b/94a3b8?text=Video'">
-                                        <div class="absolute bottom-1 right-1 bg-black/80 px-1.5 py-0.5 rounded text-[9px] font-medium text-white">${v.duration || '00:00'}</div>
-                                    </div>
-                                    <div class="flex-1 min-w-0 py-1 flex flex-col justify-between">
-                                        <div>
-                                            <span class="text-[10px] font-semibold text-blue-400 uppercase tracking-wider">${cat}</span>
-                                            <h3 class="text-sm font-semibold text-slate-100 leading-tight mt-0.5 line-clamp-2">${v.title}</h3>
-                                        </div>
-                                        <div class="flex items-center text-xs text-slate-500 gap-3 mt-2">
-                                            <span class="flex items-center gap-1"><i class="ph ph-eye"></i> ${v.views || 0}</span>
-                                            <span>${formatDate(v.createdAt)}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            `;
-                        }).join('')}
+                    <div id="video-list-container" class="px-6 py-6 space-y-4 flex-1 overflow-y-auto">
+                        ${generateVideoListHTML()}
                     </div>
                 </div>
             `;
         }
 
-        function buildToolsView() {
+        // Isolated Tools List Html Generator for Debounce UI
+        function generateToolListHTML() {
             let pubTools = state.tools.filter(t => t.status === 'published');
-            if (state.searchQuery) {
-                pubTools = pubTools.filter(t => t.title.toLowerCase().includes(state.searchQuery));
-            }
+            if (state.searchQuery) pubTools = pubTools.filter(t => t.title.toLowerCase().includes(state.searchQuery));
 
+            if(pubTools.length === 0) {
+                return `
+                    <div class="flex flex-col items-center justify-center py-12 text-slate-500 fade-in">
+                        <i class="ph ph-wrench text-5xl mb-3"></i>
+                        <p>No tools found.</p>
+                    </div>
+                `;
+            }
+            return pubTools.map(t => `
+                <div class="bg-gradient-to-r from-slate-900 to-slate-800 p-4 rounded-2xl border border-slate-700/50 hover:border-blue-500/50 shadow-xl shadow-black/20 flex items-center gap-4 transition-all relative overflow-hidden group fade-in">
+                    <div class="absolute inset-0 bg-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+                    <div class="w-14 h-14 rounded-xl bg-slate-950 border border-slate-700/50 flex items-center justify-center shrink-0 p-1 z-10 shadow-inner">
+                        <img src="${t.thumbnail}" class="w-full h-full object-contain rounded-lg" onerror="this.src='https://placehold.co/100/1e293b/94a3b8?text=Tool'">
+                    </div>
+                    <div class="flex-1 min-w-0 z-10">
+                        <h3 class="text-base font-bold text-slate-100 truncate">${t.title}</h3>
+                        <div class="flex items-center gap-2 mt-1.5">
+                            <span class="bg-blue-500/20 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded text-[10px] font-bold tracking-wide">${t.fileType || 'APK'}</span>
+                            <span class="text-xs font-medium text-slate-400 flex items-center gap-1">
+                                <i class="ph-fill ph-hard-drive"></i> ${formatSize(t.size)}
+                            </span>
+                        </div>
+                    </div>
+                    <button data-action="download-tool" data-id="${t.id}" data-url="${t.fileUrl}" class="w-11 h-11 shrink-0 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 text-white flex items-center justify-center hover:scale-105 shadow-lg shadow-blue-900/50 transition-all z-10">
+                        <i class="ph-bold ph-download-simple text-xl"></i>
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function buildToolsView() {
             return `
                 <div class="fade-in h-full flex flex-col">
                     <div class="sticky top-0 z-30 bg-slate-950/95 backdrop-blur-md pt-6 pb-4 px-6 border-b border-slate-800">
                         <div class="relative">
                             <i class="ph ph-magnifying-glass absolute left-4 top-3.5 text-slate-400 text-lg"></i>
-                            <input type="text" id="searchInput" placeholder="Search tools, APKs..." value="${state.searchQuery}"
+                            <input type="text" id="searchInput" placeholder="Search premium tools, APKs..." value="${state.searchQuery}"
                                 class="w-full bg-slate-900 text-white rounded-2xl py-3 pl-12 pr-4 border border-slate-800 focus:border-blue-500 outline-none transition-colors">
                         </div>
                     </div>
 
-                    <div class="px-6 py-6 grid grid-cols-1 gap-4 flex-1 overflow-y-auto">
-                        ${pubTools.length === 0 ? `
-                            <div class="flex flex-col items-center justify-center py-12 text-slate-500">
-                                <i class="ph ph-wrench text-5xl mb-3"></i>
-                                <p>No tools found.</p>
-                            </div>
-                        ` : ''}
-                        ${pubTools.map(t => `
-                            <div class="bg-slate-900 p-4 rounded-2xl border border-slate-800 flex items-center gap-4">
-                                <img src="${t.thumbnail}" class="w-14 h-14 rounded-xl object-cover bg-slate-800 shrink-0" onerror="this.src='https://placehold.co/100/1e293b/94a3b8?text=Tool'">
-                                <div class="flex-1 min-w-0">
-                                    <h3 class="text-base font-semibold text-slate-100 truncate">${t.title}</h3>
-                                    <div class="flex items-center gap-2 mt-1">
-                                        <span class="bg-slate-800 text-slate-300 px-2 py-0.5 rounded text-[10px] font-medium">${t.fileType || 'FILE'}</span>
-                                        <span class="text-xs text-slate-500">${t.size || 'Unknown size'}</span>
-                                    </div>
-                                </div>
-                                <button data-action="download-tool" data-id="${t.id}" data-url="${t.fileUrl}" class="w-10 h-10 shrink-0 rounded-full bg-blue-600/20 text-blue-500 flex items-center justify-center hover:bg-blue-600 hover:text-white transition-colors">
-                                    <i class="ph ph-download-simple text-xl"></i>
-                                </button>
-                            </div>
-                        `).join('')}
+                    <div id="tool-list-container" class="px-6 py-6 space-y-4 flex-1 overflow-y-auto">
+                        ${generateToolListHTML()}
                     </div>
                 </div>
             `;
@@ -857,11 +885,12 @@
                         ${state.tools.length === 0 ? '<div class="text-center text-slate-500 py-10">No tools found. Click + to add.</div>' : ''}
                         ${state.tools.map(t => `
                             <div class="bg-slate-900 border border-slate-800 p-3 rounded-2xl flex gap-3 items-center">
-                                <img src="${t.thumbnail}" class="w-12 h-12 object-cover rounded-xl bg-slate-800 shrink-0">
+                                <img src="${t.thumbnail}" class="w-12 h-12 object-contain rounded-xl bg-slate-950 p-1 border border-slate-700/50 shrink-0">
                                 <div class="flex-1 min-w-0">
                                     <div class="text-sm text-white font-medium truncate">${t.title}</div>
                                     <div class="text-[10px] text-slate-400 flex items-center gap-2 mt-1">
                                         <span class="bg-slate-800 px-1.5 py-0.5 rounded">${t.fileType}</span>
+                                        <span class="text-slate-400">${formatSize(t.size)}</span>
                                         <span class="${t.status === 'published' ? 'text-emerald-400' : 'text-amber-400'}">${t.status}</span>
                                     </div>
                                 </div>
@@ -1044,8 +1073,8 @@
                             <input type="text" id="t_type" value="${t.fileType || 'APK'}" placeholder="APK, ZIP, PDF" class="w-full bg-slate-950 text-white rounded-xl px-4 py-3 border border-slate-800 focus:border-amber-500 outline-none text-sm">
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-slate-400 mb-1">Size</label>
-                            <input type="text" id="t_size" value="${t.size || ''}" placeholder="e.g. 15 MB" class="w-full bg-slate-950 text-white rounded-xl px-4 py-3 border border-slate-800 outline-none text-sm">
+                            <label class="block text-xs font-medium text-slate-400 mb-1">Size (Auto-adds MB)</label>
+                            <input type="text" id="t_size" value="${t.size || ''}" placeholder="e.g. 15" class="w-full bg-slate-950 text-white rounded-xl px-4 py-3 border border-slate-800 outline-none text-sm">
                         </div>
                     </div>
 
@@ -1223,7 +1252,7 @@
                     const payload = {
                         title,
                         fileType: document.getElementById('t_type').value.trim() || 'APK',
-                        size: document.getElementById('t_size').value.trim(),
+                        size: document.getElementById('t_size').value.trim(), // Will automatically append MB when formatting in HTML
                         fileUrl,
                         thumbnail: thumbUrl,
                         status: document.getElementById('t_status').value,
@@ -1249,7 +1278,7 @@
                 }
             }
 
-            // Deletion (Custom Toast logic to avoid alert/confirm)
+            // Deletion
             if (action === 'delete-video') {
                 try {
                     await deleteDoc(doc(getCollectionPath('videos'), id));
@@ -1312,7 +1341,10 @@
             }
         });
 
-        // Initialize App
+        // Instant Initial Render to prevent loading screen & Show Banner Immediately
+        render();
+
+        // Initialize Firebase Connection silently
         initAuth();
 
     </script>
