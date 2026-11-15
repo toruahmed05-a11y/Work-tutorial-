@@ -1,0 +1,1324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Tutorial & Tools Hub</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    
+    <!-- Telegram Web App SDK -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        slate: {
+                            850: '#151e2c',
+                            900: '#0f172a',
+                            950: '#020617',
+                        },
+                        blue: {
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        
+        body {
+            background-color: #020617;
+            color: #f8fafc;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .fade-in { animation: fadeIn 0.3s ease-in-out forwards; }
+        .slide-up { animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .slide-down { animation: slideDown 0.3s ease-out forwards; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes slideDown {
+            from { transform: translateY(-20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .glass-nav {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-top: 1px solid rgba(255,255,255,0.05);
+        }
+
+        /* Custom Range Slider for Admin UI adjustments if needed */
+        input[type=range] { -webkit-appearance: none; background: transparent; }
+        
+        #toast-container {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: none;
+            width: 90%;
+            max-width: 400px;
+        }
+        .toast {
+            background: #1e293b;
+            border-left: 4px solid #3b82f6;
+            color: white;
+            padding: 14px 20px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+            animation: slideDown 0.3s ease-out forwards;
+            font-size: 0.875rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .toast.success { border-color: #10b981; }
+        .toast.error { border-color: #ef4444; }
+        .toast.fade-out { animation: fadeOut 0.3s ease-in forwards; }
+
+        @keyframes fadeOut {
+            from { transform: translateY(0); opacity: 1; }
+            to { transform: translateY(-20px); opacity: 0; }
+        }
+        
+        .line-clamp-2 {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;  
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body class="antialiased min-h-screen flex justify-center">
+
+    <!-- Mobile Constrained App Container -->
+    <div id="app" class="w-full max-w-md bg-slate-900 min-h-screen relative shadow-2xl overflow-hidden flex flex-col">
+        
+        <!-- Top Header -->
+        <header class="h-16 flex items-center justify-between px-6 bg-slate-900/90 backdrop-blur-md sticky top-0 z-40 border-b border-slate-800">
+            <h1 class="text-xl font-bold bg-gradient-to-r from-blue-400 to-indigo-500 bg-clip-text text-transparent flex items-center gap-2">
+                <i class="ph-fill ph-rocket-launch text-blue-500"></i> DevHub
+            </h1>
+            <button id="admin-btn" data-action="go-admin" class="hidden w-10 h-10 rounded-full flex items-center justify-center text-slate-500 hover:text-white transition-colors bg-slate-800/50">
+                <i class="ph ph-lock-key text-lg"></i>
+            </button>
+        </header>
+
+        <!-- Dynamic View Container -->
+        <main id="view-container" class="flex-1 overflow-y-auto overflow-x-hidden pb-24 no-scrollbar bg-slate-950">
+            <div class="flex items-center justify-center h-full">
+                <i class="ph ph-spinner-gap animate-spin text-4xl text-blue-500"></i>
+            </div>
+        </main>
+
+        <!-- Bottom Navigation (4 Tabs) -->
+        <nav id="bottom-nav" class="hidden absolute bottom-0 w-full glass-nav px-4 py-3 pb-safe z-50">
+            <div class="flex justify-between items-center max-w-sm mx-auto">
+                <button data-action="nav-home" class="nav-btn flex flex-col items-center flex-1 text-slate-400 hover:text-blue-400 transition-colors">
+                    <i class="ph ph-house text-2xl mb-1 transition-transform"></i>
+                    <span class="text-[10px] font-medium">Home</span>
+                </button>
+                <button data-action="nav-videos" class="nav-btn flex flex-col items-center flex-1 text-slate-400 hover:text-blue-400 transition-colors">
+                    <i class="ph ph-play-circle text-2xl mb-1 transition-transform"></i>
+                    <span class="text-[10px] font-medium">Videos</span>
+                </button>
+                <button data-action="nav-tools" class="nav-btn flex flex-col items-center flex-1 text-slate-400 hover:text-blue-400 transition-colors">
+                    <i class="ph ph-wrench text-2xl mb-1 transition-transform"></i>
+                    <span class="text-[10px] font-medium">Tools</span>
+                </button>
+                <button data-action="nav-support" class="nav-btn flex flex-col items-center flex-1 text-slate-400 hover:text-blue-400 transition-colors">
+                    <i class="ph ph-headset text-2xl mb-1 transition-transform"></i>
+                    <span class="text-[10px] font-medium">Support</span>
+                </button>
+            </div>
+        </nav>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container"></div>
+
+    <!-- Modal Container -->
+    <div id="modal-container"></div>
+
+    <!-- Application Logic -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
+
+        // Global Env Variables
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'tutorial-tools-hub';
+        const firebaseConfig = {
+            apiKey: "AIzaSyChwnlK4j69hcUFlMZg6IOprtSbSezi2Og",
+            authDomain: "work-tutorial-16996.firebaseapp.com",
+            projectId: "work-tutorial-16996",
+            storageBucket: "work-tutorial-16996.firebasestorage.app",
+            messagingSenderId: "656885056769",
+            appId: "1:656885056769:web:22d0d6e2b5cf1890930700",
+            measurementId: "G-ZRLR822LY4"
+        };
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        // Firebase Instances
+        let app, db, auth, storage;
+        try {
+            app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+            storage = getStorage(app);
+        } catch(e) {
+            console.error("Firebase init failed:", e);
+        }
+
+        // Setup Telegram Web App
+        const tg = window.Telegram?.WebApp;
+        if(tg) {
+            tg.expand();
+            tg.setHeaderColor('#0f172a');
+            tg.setBackgroundColor('#020617');
+        }
+
+        // App State
+        const state = {
+            user: null,
+            isAdmin: false,
+            isAuthorizedAdminUser: false,
+            currentView: 'home', // home, videos, tools, support, video-detail, admin-login, admin-dashboard, admin-videos, admin-tools, admin-settings
+            videos: [],
+            tools: [],
+            categories: [],
+            settings: {
+                telegramSupport: 'https://t.me/support',
+                officialChannel: 'https://t.me/channel',
+                startWorking: 'https://example.com/start'
+            },
+            searchQuery: '',
+            selectedCategory: 'All',
+            activeEntityId: null,
+            unsubscribes: []
+        };
+
+        // Check Admin Access via Telegram ID
+        const tgUser = tg?.initDataUnsafe?.user;
+        const allowedAdminIds = [6703675335, 7883180509];
+        if (tgUser && allowedAdminIds.includes(Number(tgUser.id))) {
+            state.isAuthorizedAdminUser = true;
+            document.getElementById('admin-btn').classList.remove('hidden');
+        }
+
+        // --- Utilities ---
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            
+            let icon = 'info';
+            if(type === 'success') icon = 'check-circle';
+            if(type === 'error') icon = 'warning-circle';
+            
+            toast.innerHTML = `<i class="ph-fill ph-${icon} text-xl"></i> <span>${message}</span>`;
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.classList.add('fade-out');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        function generateId() {
+            return Math.random().toString(36).substring(2, 10);
+        }
+
+        function extractYTId(url) {
+            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+            const match = url.match(regExp);
+            return (match && match[2].length === 11) ? match[2] : null;
+        }
+
+        function formatDate(ts) {
+            if(!ts) return '';
+            return new Date(ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+
+        // --- Firebase Data Fetching ---
+        function getCollectionPath(collectionName) {
+            // STRICT RULE: path structure
+            return collection(db, 'artifacts', appId, 'public', 'data', collectionName);
+        }
+
+        async function initAuth() {
+            try {
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+                state.user = auth.currentUser;
+                setupDataListeners();
+            } catch (error) {
+                console.error("Auth error:", error);
+                showToast("Authentication error, previewing locally.", "error");
+                render();
+            }
+        }
+
+        function setupDataListeners() {
+            if(!state.user) return;
+
+            // Clear old listeners
+            state.unsubscribes.forEach(unsub => unsub());
+            state.unsubscribes = [];
+
+            // 1. Videos
+            const unsubVideos = onSnapshot(getCollectionPath('videos'), (snapshot) => {
+                state.videos = snapshot.docs.map(d => ({id: d.id, ...d.data()})).sort((a,b) => b.createdAt - a.createdAt);
+                if(['home', 'videos', 'admin-videos', 'admin-dashboard'].includes(state.currentView)) render();
+            }, (e) => console.error(e));
+            
+            // 2. Tools
+            const unsubTools = onSnapshot(getCollectionPath('tools'), (snapshot) => {
+                state.tools = snapshot.docs.map(d => ({id: d.id, ...d.data()})).sort((a,b) => b.createdAt - a.createdAt);
+                if(['home', 'tools', 'admin-tools', 'admin-dashboard'].includes(state.currentView)) render();
+            }, (e) => console.error(e));
+
+            // 3. Categories
+            const unsubCats = onSnapshot(getCollectionPath('categories'), (snapshot) => {
+                state.categories = snapshot.docs.map(d => ({id: d.id, ...d.data()}));
+                if(state.categories.length === 0) seedDefaultCategories();
+                if(['videos', 'admin-videos'].includes(state.currentView)) render();
+            }, (e) => console.error(e));
+
+            // 4. Settings
+            const unsubSettings = onSnapshot(doc(getCollectionPath('settings'), 'support_links'), (docSnap) => {
+                if (docSnap.exists()) {
+                    state.settings = { ...state.settings, ...docSnap.data() };
+                }
+                if(['support', 'admin-settings'].includes(state.currentView)) render();
+            }, (e) => console.error(e));
+
+            state.unsubscribes.push(unsubVideos, unsubTools, unsubCats, unsubSettings);
+        }
+
+        async function seedDefaultCategories() {
+            const defaults = ['Development', 'Design', 'Marketing', 'Crypto'];
+            for(let name of defaults) {
+                const id = generateId();
+                await setDoc(doc(getCollectionPath('categories'), id), { id, name });
+            }
+        }
+
+        // --- File Upload Helper ---
+        async function uploadFileToStorage(file, folder) {
+            if(!storage || !firebaseConfig.storageBucket || firebaseConfig.storageBucket === 'mock') {
+                throw new Error("Storage not configured");
+            }
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${Date.now()}_${generateId()}.${fileExt}`;
+            const storageRef = ref(storage, `${appId}/${folder}/${fileName}`);
+            
+            await uploadBytes(storageRef, file);
+            return await getDownloadURL(storageRef);
+        }
+
+        // --- Rendering Engine ---
+        const viewContainer = document.getElementById('view-container');
+        const bottomNav = document.getElementById('bottom-nav');
+
+        function render() {
+            updateNavUI();
+            
+            let html = '';
+            switch(state.currentView) {
+                case 'home': html = buildHomeView(); break;
+                case 'videos': html = buildVideosView(); break;
+                case 'tools': html = buildToolsView(); break;
+                case 'support': html = buildSupportView(); break;
+                case 'video-detail': html = buildVideoDetailView(); break;
+                
+                // Admin Views
+                case 'admin-login': html = buildAdminLogin(); break;
+                case 'admin-dashboard': html = buildAdminDashboard(); break;
+                case 'admin-videos': html = buildAdminVideos(); break;
+                case 'admin-tools': html = buildAdminTools(); break;
+                case 'admin-settings': html = buildAdminSettings(); break;
+                default: html = buildHomeView();
+            }
+
+            viewContainer.innerHTML = html;
+            attachDynamicListeners();
+        }
+
+        function updateNavUI() {
+            const adminViews = ['admin-login', 'admin-dashboard', 'admin-videos', 'admin-tools', 'admin-settings', 'video-detail'];
+            
+            if(adminViews.includes(state.currentView)) {
+                bottomNav.classList.add('hidden');
+            } else {
+                bottomNav.classList.remove('hidden');
+                
+                const tabs = ['home', 'videos', 'tools', 'support'];
+                tabs.forEach(tab => {
+                    const btn = bottomNav.querySelector(`[data-action="nav-${tab}"]`);
+                    const icon = btn.querySelector('i');
+                    if (state.currentView === tab) {
+                        btn.classList.replace('text-slate-400', 'text-blue-500');
+                        icon.classList.replace('ph', 'ph-fill');
+                        icon.classList.add('-translate-y-1');
+                    } else {
+                        btn.classList.replace('text-blue-500', 'text-slate-400');
+                        icon.classList.replace('ph-fill', 'ph');
+                        icon.classList.remove('-translate-y-1');
+                    }
+                });
+            }
+        }
+
+        function attachDynamicListeners() {
+            // Restore focus and cursor for search inputs if they exist in the new view
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                searchInput.addEventListener('input', (e) => {
+                    state.searchQuery = e.target.value.toLowerCase();
+                    // Debounce rendering
+                    clearTimeout(window.searchTimeout);
+                    window.searchTimeout = setTimeout(render, 300);
+                });
+                searchInput.focus();
+                searchInput.setSelectionRange(searchInput.value.length, searchInput.value.length);
+            }
+        }
+
+        // --- View Builders (Client) ---
+
+        function buildHomeView() {
+            const pubVideos = state.videos.filter(v => v.status === 'published');
+            const pubTools = state.tools.filter(t => t.status === 'published');
+            
+            const featured = pubVideos.filter(v => v.featured).slice(0, 5);
+            const latestVideos = pubVideos.slice(0, 5);
+            const latestTools = pubTools.slice(0, 4);
+
+            return `
+                <div class="fade-in pb-8">
+                    <!-- Hero Banner -->
+                    <div class="bg-gradient-to-br from-blue-600 to-indigo-700 p-6 rounded-b-3xl shadow-lg relative overflow-hidden">
+                        <div class="absolute top-0 right-0 -mt-10 -mr-10 opacity-20">
+                            <i class="ph-fill ph-code text-9xl"></i>
+                        </div>
+                        <h2 class="text-3xl font-bold text-white mb-2 relative z-10">Learn & Build</h2>
+                        <p class="text-blue-100 text-sm max-w-[80%] relative z-10">Access premium tutorials, tools, and resources to accelerate your journey.</p>
+                        <button data-action="nav-videos" class="mt-4 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white px-5 py-2 rounded-full text-sm font-medium transition-colors relative z-10">
+                            Start Learning
+                        </button>
+                    </div>
+
+                    ${featured.length > 0 ? `
+                    <div class="mt-6 px-6">
+                        <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                            <i class="ph-fill ph-star text-amber-400"></i> Featured
+                        </h3>
+                        <div class="flex gap-4 overflow-x-auto no-scrollbar pb-4 snap-x">
+                            ${featured.map(v => `
+                                <div data-action="view-video" data-id="${v.id}" class="snap-start shrink-0 w-64 group cursor-pointer">
+                                    <div class="w-full aspect-video rounded-2xl bg-slate-800 overflow-hidden relative mb-3">
+                                        <img src="${v.thumbnail}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" onerror="this.src='https://placehold.co/600x400/1e293b/94a3b8?text=No+Image'">
+                                        <div class="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors"></div>
+                                        <div class="absolute bottom-2 right-2 bg-black/70 px-2 py-1 rounded text-[10px] font-medium text-white backdrop-blur-sm">${v.duration || '00:00'}</div>
+                                    </div>
+                                    <h4 class="text-sm font-semibold text-slate-200 line-clamp-2 leading-tight group-hover:text-blue-400 transition-colors">${v.title}</h4>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    ` : ''}
+
+                    <div class="mt-6 px-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-lg font-bold text-white">Latest Tools</h3>
+                            <button data-action="nav-tools" class="text-blue-500 text-sm font-medium">View All</button>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            ${latestTools.length === 0 ? `<p class="col-span-2 text-slate-500 text-sm text-center py-4">No tools available.</p>` : ''}
+                            ${latestTools.map(t => `
+                                <div class="bg-slate-800 border border-slate-700 p-4 rounded-2xl flex flex-col items-center text-center">
+                                    <img src="${t.thumbnail}" class="w-12 h-12 rounded-xl mb-3 object-cover bg-slate-700" onerror="this.src='https://placehold.co/100/1e293b/94a3b8?text=APK'">
+                                    <h4 class="text-sm font-semibold text-slate-200 line-clamp-1 w-full">${t.title}</h4>
+                                    <span class="text-[10px] text-slate-400 mt-1 bg-slate-900 px-2 py-0.5 rounded-full">${t.fileType}</span>
+                                    <button data-action="download-tool" data-id="${t.id}" data-url="${t.fileUrl}" class="mt-3 w-full bg-blue-600/20 text-blue-400 hover:bg-blue-600 hover:text-white py-1.5 rounded-lg text-xs font-medium transition-colors">
+                                        Download
+                                    </button>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function buildVideosView() {
+            let pubVideos = state.videos.filter(v => v.status === 'published');
+            
+            if (state.selectedCategory !== 'All') {
+                pubVideos = pubVideos.filter(v => v.categoryId === state.selectedCategory);
+            }
+            if (state.searchQuery) {
+                pubVideos = pubVideos.filter(v => v.title.toLowerCase().includes(state.searchQuery));
+            }
+
+            return `
+                <div class="fade-in h-full flex flex-col">
+                    <div class="sticky top-0 z-30 bg-slate-950/95 backdrop-blur-md pt-6 pb-2 px-6 border-b border-slate-800">
+                        <div class="relative mb-4">
+                            <i class="ph ph-magnifying-glass absolute left-4 top-3.5 text-slate-400 text-lg"></i>
+                            <input type="text" id="searchInput" placeholder="Search tutorials..." value="${state.searchQuery}"
+                                class="w-full bg-slate-900 text-white rounded-2xl py-3 pl-12 pr-4 border border-slate-800 focus:border-blue-500 outline-none transition-colors">
+                        </div>
+                        
+                        <div class="flex gap-2 overflow-x-auto no-scrollbar pb-2">
+                            <button data-action="filter-cat" data-id="All" class="whitespace-nowrap px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${state.selectedCategory === 'All' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}">All</button>
+                            ${state.categories.map(c => `
+                                <button data-action="filter-cat" data-id="${c.id}" class="whitespace-nowrap px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${state.selectedCategory === c.id ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}">${c.name}</button>
+                            `).join('')}
+                        </div>
+                    </div>
+
+                    <div class="px-6 py-6 space-y-6 flex-1 overflow-y-auto">
+                        ${pubVideos.length === 0 ? `
+                            <div class="flex flex-col items-center justify-center py-12 text-slate-500">
+                                <i class="ph ph-video-camera-slash text-5xl mb-3"></i>
+                                <p>No tutorials found.</p>
+                            </div>
+                        ` : ''}
+                        ${pubVideos.map(v => {
+                            const cat = state.categories.find(c => c.id === v.categoryId)?.name || 'Misc';
+                            return `
+                                <div data-action="view-video" data-id="${v.id}" class="group cursor-pointer flex gap-4 bg-slate-900 p-3 rounded-2xl border border-slate-800 hover:border-slate-700 transition-colors">
+                                    <div class="w-32 h-24 shrink-0 rounded-xl overflow-hidden relative bg-slate-800">
+                                        <img src="${v.thumbnail}" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/300x200/1e293b/94a3b8?text=Video'">
+                                        <div class="absolute bottom-1 right-1 bg-black/80 px-1.5 py-0.5 rounded text-[9px] font-medium text-white">${v.duration || '00:00'}</div>
+                                    </div>
+                                    <div class="flex-1 min-w-0 py-1 flex flex-col justify-between">
+                                        <div>
+                                            <span class="text-[10px] font-semibold text-blue-400 uppercase tracking-wider">${cat}</span>
+                                            <h3 class="text-sm font-semibold text-slate-100 leading-tight mt-0.5 line-clamp-2">${v.title}</h3>
+                                        </div>
+                                        <div class="flex items-center text-xs text-slate-500 gap-3 mt-2">
+                                            <span class="flex items-center gap-1"><i class="ph ph-eye"></i> ${v.views || 0}</span>
+                                            <span>${formatDate(v.createdAt)}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function buildToolsView() {
+            let pubTools = state.tools.filter(t => t.status === 'published');
+            if (state.searchQuery) {
+                pubTools = pubTools.filter(t => t.title.toLowerCase().includes(state.searchQuery));
+            }
+
+            return `
+                <div class="fade-in h-full flex flex-col">
+                    <div class="sticky top-0 z-30 bg-slate-950/95 backdrop-blur-md pt-6 pb-4 px-6 border-b border-slate-800">
+                        <div class="relative">
+                            <i class="ph ph-magnifying-glass absolute left-4 top-3.5 text-slate-400 text-lg"></i>
+                            <input type="text" id="searchInput" placeholder="Search tools, APKs..." value="${state.searchQuery}"
+                                class="w-full bg-slate-900 text-white rounded-2xl py-3 pl-12 pr-4 border border-slate-800 focus:border-blue-500 outline-none transition-colors">
+                        </div>
+                    </div>
+
+                    <div class="px-6 py-6 grid grid-cols-1 gap-4 flex-1 overflow-y-auto">
+                        ${pubTools.length === 0 ? `
+                            <div class="flex flex-col items-center justify-center py-12 text-slate-500">
+                                <i class="ph ph-wrench text-5xl mb-3"></i>
+                                <p>No tools found.</p>
+                            </div>
+                        ` : ''}
+                        ${pubTools.map(t => `
+                            <div class="bg-slate-900 p-4 rounded-2xl border border-slate-800 flex items-center gap-4">
+                                <img src="${t.thumbnail}" class="w-14 h-14 rounded-xl object-cover bg-slate-800 shrink-0" onerror="this.src='https://placehold.co/100/1e293b/94a3b8?text=Tool'">
+                                <div class="flex-1 min-w-0">
+                                    <h3 class="text-base font-semibold text-slate-100 truncate">${t.title}</h3>
+                                    <div class="flex items-center gap-2 mt-1">
+                                        <span class="bg-slate-800 text-slate-300 px-2 py-0.5 rounded text-[10px] font-medium">${t.fileType || 'FILE'}</span>
+                                        <span class="text-xs text-slate-500">${t.size || 'Unknown size'}</span>
+                                    </div>
+                                </div>
+                                <button data-action="download-tool" data-id="${t.id}" data-url="${t.fileUrl}" class="w-10 h-10 shrink-0 rounded-full bg-blue-600/20 text-blue-500 flex items-center justify-center hover:bg-blue-600 hover:text-white transition-colors">
+                                    <i class="ph ph-download-simple text-xl"></i>
+                                </button>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function buildSupportView() {
+            return `
+                <div class="fade-in p-6 flex flex-col items-center justify-center min-h-[80vh]">
+                    <div class="w-24 h-24 bg-blue-600/10 rounded-full flex items-center justify-center mb-6">
+                        <i class="ph-fill ph-headset text-5xl text-blue-500"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold text-white mb-2">Need Help?</h2>
+                    <p class="text-slate-400 text-center mb-8 text-sm">Join our community or reach out to support for any queries or assistance.</p>
+                    
+                    <div class="w-full space-y-4 max-w-sm">
+                        <a href="${state.settings.telegramSupport}" target="_blank" class="flex items-center justify-between bg-slate-900 border border-slate-800 p-4 rounded-2xl hover:border-blue-500 transition-colors group">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 group-hover:bg-blue-500 group-hover:text-white transition-colors">
+                                    <i class="ph-fill ph-telegram-logo text-xl"></i>
+                                </div>
+                                <div>
+                                    <div class="text-slate-200 font-medium">Telegram Support</div>
+                                    <div class="text-xs text-slate-500">Chat with our team</div>
+                                </div>
+                            </div>
+                            <i class="ph ph-caret-right text-slate-500"></i>
+                        </a>
+                        
+                        <a href="${state.settings.officialChannel}" target="_blank" class="flex items-center justify-between bg-slate-900 border border-slate-800 p-4 rounded-2xl hover:border-indigo-500 transition-colors group">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full bg-indigo-500/20 flex items-center justify-center text-indigo-400 group-hover:bg-indigo-500 group-hover:text-white transition-colors">
+                                    <i class="ph-fill ph-megaphone text-xl"></i>
+                                </div>
+                                <div>
+                                    <div class="text-slate-200 font-medium">Official Channel</div>
+                                    <div class="text-xs text-slate-500">Latest updates & news</div>
+                                </div>
+                            </div>
+                            <i class="ph ph-caret-right text-slate-500"></i>
+                        </a>
+
+                        <a href="${state.settings.startWorking}" target="_blank" class="flex items-center justify-between bg-gradient-to-r from-blue-600 to-indigo-600 p-4 rounded-2xl hover:opacity-90 transition-opacity shadow-lg shadow-blue-900/50 mt-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white">
+                                    <i class="ph-fill ph-briefcase text-xl"></i>
+                                </div>
+                                <div>
+                                    <div class="text-white font-bold">Start Working</div>
+                                    <div class="text-xs text-blue-100">Join our network today</div>
+                                </div>
+                            </div>
+                            <i class="ph ph-arrow-right text-white"></i>
+                        </a>
+                    </div>
+                </div>
+            `;
+        }
+
+        function buildVideoDetailView() {
+            const video = state.videos.find(v => v.id === state.activeEntityId);
+            if(!video) return `<div class="p-6 text-center text-red-400">Video not found</div>`;
+
+            const cat = state.categories.find(c => c.id === video.categoryId)?.name || 'Misc';
+            const ytId = extractYTId(video.videoUrl || '');
+
+            // Basic Markdown for Guide
+            const formatGuide = (text) => {
+                if(!text) return '<p class="text-slate-500 italic">No guide available.</p>';
+                let html = text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                html = html.replace(/\*\*(.*?)\*\*/g, '<strong class="text-blue-400">$1</strong>');
+                html = html.replace(/\n/g, '<br/>');
+                return html;
+            };
+
+            // Increment views (debounce/lock to prevent spam ideally, but simple for demo)
+            if(state.user && !video._viewCounted) {
+                video._viewCounted = true;
+                updateDoc(doc(getCollectionPath('videos'), video.id), { views: (video.views || 0) + 1 }).catch(e=>console.log(e));
+            }
+
+            return `
+                <div class="fade-in bg-slate-950 min-h-screen pb-10">
+                    <div class="sticky top-0 z-50 bg-slate-900/90 backdrop-blur-md px-4 py-3 flex items-center gap-3 border-b border-slate-800">
+                        <button data-action="nav-videos" class="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-slate-300 hover:text-white transition-colors">
+                            <i class="ph ph-arrow-left text-xl"></i>
+                        </button>
+                        <h2 class="text-white font-semibold truncate flex-1">${video.title}</h2>
+                    </div>
+
+                    <div class="w-full aspect-video bg-black sticky top-[65px] z-40 shadow-xl border-b border-slate-800">
+                        ${ytId ? 
+                            `<iframe class="w-full h-full" src="https://www.youtube.com/embed/${ytId}?autoplay=1&rel=0" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>` 
+                            : `<div class="w-full h-full flex flex-col items-center justify-center text-slate-500"><i class="ph ph-warning-circle text-4xl mb-2"></i><span>Invalid YouTube URL</span></div>`
+                        }
+                    </div>
+
+                    <div class="p-6">
+                        <span class="inline-block bg-blue-500/20 text-blue-400 text-xs font-bold px-3 py-1 rounded-full mb-3">${cat}</span>
+                        <h1 class="text-2xl font-bold text-white leading-tight mb-3">${video.title}</h1>
+                        
+                        <div class="flex items-center text-sm text-slate-400 gap-4 mb-6 border-b border-slate-800 pb-6">
+                            <span class="flex items-center gap-1.5"><i class="ph ph-eye text-lg"></i> ${video.views || 0} views</span>
+                            <span class="flex items-center gap-1.5"><i class="ph ph-clock text-lg"></i> ${video.duration || 'N/A'}</span>
+                            <span class="flex items-center gap-1.5"><i class="ph ph-calendar text-lg"></i> ${formatDate(video.createdAt)}</span>
+                        </div>
+
+                        <div class="space-y-6">
+                            ${video.description ? `
+                            <div>
+                                <h3 class="text-lg font-semibold text-white mb-2 flex items-center gap-2">
+                                    <i class="ph-fill ph-info text-blue-500"></i> Description
+                                </h3>
+                                <p class="text-slate-300 text-sm leading-relaxed">${video.description.replace(/\n/g, '<br/>')}</p>
+                            </div>
+                            ` : ''}
+
+                            <div class="bg-slate-900 rounded-2xl p-5 border border-slate-800">
+                                <h3 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                                    <i class="ph-fill ph-book-open-text text-blue-500"></i> Step-by-Step Guide
+                                </h3>
+                                <div class="text-slate-300 text-sm leading-relaxed space-y-2">
+                                    ${formatGuide(video.guide)}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- Admin Views ---
+
+        function buildAdminLogin() {
+            if(state.isAdmin) {
+                state.currentView = 'admin-dashboard';
+                render();
+                return '';
+            }
+            return `
+                <div class="flex flex-col items-center justify-center min-h-[80vh] p-6 fade-in">
+                    <div class="w-full max-w-sm bg-slate-900 border border-slate-800 p-8 rounded-3xl shadow-2xl">
+                        <div class="text-center mb-8">
+                            <div class="w-16 h-16 bg-blue-600/20 text-blue-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                                <i class="ph-fill ph-shield-check text-4xl"></i>
+                            </div>
+                            <h2 class="text-2xl font-bold text-white">Admin Access</h2>
+                            <p class="text-sm text-slate-400 mt-2">PIN: 1234</p>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <input type="password" id="adminPin" placeholder="Enter PIN" 
+                                class="w-full bg-slate-950 text-center tracking-[0.5em] text-white rounded-xl py-4 border border-slate-800 focus:border-blue-500 outline-none transition-colors">
+                            <button data-action="do-login" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3.5 rounded-xl transition-colors shadow-lg shadow-blue-900/50">
+                                Verify Access
+                            </button>
+                            <button data-action="nav-home" class="w-full text-slate-500 hover:text-white py-2 text-sm">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function buildAdminDashboard() {
+            const totalVideos = state.videos.length;
+            const totalTools = state.tools.length;
+            const totalViews = state.videos.reduce((sum, v) => sum + (v.views || 0), 0);
+            const totalDownloads = state.tools.reduce((sum, t) => sum + (t.downloads || 0), 0);
+
+            return `
+                <div class="fade-in p-6 pb-10">
+                    <div class="flex justify-between items-center mb-6 mt-2">
+                        <h1 class="text-2xl font-bold text-white flex items-center gap-2">
+                            <i class="ph-fill ph-squares-four text-blue-500"></i> Dashboard
+                        </h1>
+                        <button data-action="do-logout" class="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 hover:text-red-400 transition-colors">
+                            <i class="ph ph-sign-out text-xl"></i>
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4 mb-8">
+                        <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl">
+                            <i class="ph-fill ph-video-camera text-blue-500 text-2xl mb-2"></i>
+                            <div class="text-2xl font-bold text-white">${totalVideos}</div>
+                            <div class="text-xs text-slate-400">Videos</div>
+                        </div>
+                        <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl">
+                            <i class="ph-fill ph-wrench text-amber-500 text-2xl mb-2"></i>
+                            <div class="text-2xl font-bold text-white">${totalTools}</div>
+                            <div class="text-xs text-slate-400">Tools / APKs</div>
+                        </div>
+                        <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl">
+                            <i class="ph-fill ph-eye text-emerald-500 text-2xl mb-2"></i>
+                            <div class="text-2xl font-bold text-white">${totalViews}</div>
+                            <div class="text-xs text-slate-400">Total Views</div>
+                        </div>
+                        <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl">
+                            <i class="ph-fill ph-download-simple text-purple-500 text-2xl mb-2"></i>
+                            <div class="text-2xl font-bold text-white">${totalDownloads}</div>
+                            <div class="text-xs text-slate-400">Total DLs</div>
+                        </div>
+                    </div>
+
+                    <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">Management</h2>
+                    <div class="space-y-3">
+                        <button data-action="nav-admin-videos" class="w-full bg-slate-900 border border-slate-800 hover:border-blue-500 p-4 rounded-2xl flex items-center justify-between group">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full bg-blue-500/10 text-blue-500 flex items-center justify-center"><i class="ph-fill ph-video-camera text-xl"></i></div>
+                                <div class="text-left"><div class="text-white font-medium">Manage Videos</div><div class="text-xs text-slate-400">Add, edit, remove</div></div>
+                            </div>
+                            <i class="ph ph-caret-right text-slate-600 group-hover:text-blue-500"></i>
+                        </button>
+                        <button data-action="nav-admin-tools" class="w-full bg-slate-900 border border-slate-800 hover:border-amber-500 p-4 rounded-2xl flex items-center justify-between group">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full bg-amber-500/10 text-amber-500 flex items-center justify-center"><i class="ph-fill ph-wrench text-xl"></i></div>
+                                <div class="text-left"><div class="text-white font-medium">Manage Tools</div><div class="text-xs text-slate-400">Upload APKs/Links</div></div>
+                            </div>
+                            <i class="ph ph-caret-right text-slate-600 group-hover:text-amber-500"></i>
+                        </button>
+                        <button data-action="nav-admin-settings" class="w-full bg-slate-900 border border-slate-800 hover:border-purple-500 p-4 rounded-2xl flex items-center justify-between group">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full bg-purple-500/10 text-purple-500 flex items-center justify-center"><i class="ph-fill ph-gear text-xl"></i></div>
+                                <div class="text-left"><div class="text-white font-medium">Support Links</div><div class="text-xs text-slate-400">Update Telegram URLs</div></div>
+                            </div>
+                            <i class="ph ph-caret-right text-slate-600 group-hover:text-purple-500"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function buildAdminVideos() {
+            return `
+                <div class="fade-in p-6 h-full flex flex-col">
+                    <div class="flex items-center justify-between mb-6">
+                        <button data-action="nav-admin" class="text-slate-400 hover:text-white"><i class="ph ph-arrow-left text-2xl"></i></button>
+                        <h1 class="text-xl font-bold text-white">Manage Videos</h1>
+                        <button data-action="modal-video-add" class="bg-blue-600 text-white w-8 h-8 rounded-full flex items-center justify-center hover:bg-blue-500"><i class="ph ph-plus-bold"></i></button>
+                    </div>
+
+                    <div class="space-y-3 flex-1 overflow-y-auto no-scrollbar pb-10">
+                        ${state.videos.map(v => `
+                            <div class="bg-slate-900 border border-slate-800 p-3 rounded-2xl flex gap-3 items-center">
+                                <img src="${v.thumbnail}" class="w-16 h-12 object-cover rounded-lg bg-slate-800 shrink-0">
+                                <div class="flex-1 min-w-0">
+                                    <div class="text-sm text-white font-medium truncate">${v.title}</div>
+                                    <div class="text-[10px] text-slate-400 flex items-center gap-2 mt-1">
+                                        <span class="${v.status === 'published' ? 'text-emerald-400' : 'text-amber-400'}">${v.status}</span>
+                                        ${v.featured ? '<span class="text-amber-400"><i class="ph-fill ph-star"></i></span>' : ''}
+                                    </div>
+                                </div>
+                                <div class="flex gap-1 flex-col sm:flex-row">
+                                    <button data-action="modal-video-edit" data-id="${v.id}" class="p-2 text-blue-400 hover:bg-blue-500/10 rounded-lg"><i class="ph ph-pencil-simple"></i></button>
+                                    <button data-action="delete-video" data-id="${v.id}" class="p-2 text-red-400 hover:bg-red-500/10 rounded-lg"><i class="ph ph-trash"></i></button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function buildAdminTools() {
+            return `
+                <div class="fade-in p-6 h-full flex flex-col">
+                    <div class="flex items-center justify-between mb-6">
+                        <button data-action="nav-admin" class="text-slate-400 hover:text-white"><i class="ph ph-arrow-left text-2xl"></i></button>
+                        <h1 class="text-xl font-bold text-white">Manage Tools</h1>
+                        <button data-action="modal-tool-add" class="bg-amber-600 text-white w-8 h-8 rounded-full flex items-center justify-center hover:bg-amber-500"><i class="ph ph-plus-bold"></i></button>
+                    </div>
+
+                    <div class="space-y-3 flex-1 overflow-y-auto no-scrollbar pb-10">
+                        ${state.tools.map(t => `
+                            <div class="bg-slate-900 border border-slate-800 p-3 rounded-2xl flex gap-3 items-center">
+                                <img src="${t.thumbnail}" class="w-12 h-12 object-cover rounded-xl bg-slate-800 shrink-0">
+                                <div class="flex-1 min-w-0">
+                                    <div class="text-sm text-white font-medium truncate">${t.title}</div>
+                                    <div class="text-[10px] text-slate-400 flex items-center gap-2 mt-1">
+                                        <span class="bg-slate-800 px-1.5 py-0.5 rounded">${t.fileType}</span>
+                                        <span class="${t.status === 'published' ? 'text-emerald-400' : 'text-amber-400'}">${t.status}</span>
+                                    </div>
+                                </div>
+                                <div class="flex gap-1">
+                                    <button data-action="modal-tool-edit" data-id="${t.id}" class="p-2 text-blue-400 hover:bg-blue-500/10 rounded-lg"><i class="ph ph-pencil-simple"></i></button>
+                                    <button data-action="delete-tool" data-id="${t.id}" class="p-2 text-red-400 hover:bg-red-500/10 rounded-lg"><i class="ph ph-trash"></i></button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function buildAdminSettings() {
+            return `
+                <div class="fade-in p-6">
+                    <div class="flex items-center gap-3 mb-8">
+                        <button data-action="nav-admin" class="text-slate-400 hover:text-white"><i class="ph ph-arrow-left text-2xl"></i></button>
+                        <h1 class="text-xl font-bold text-white">Support Links</h1>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1">Telegram Support URL</label>
+                            <input type="url" id="set-support" value="${state.settings.telegramSupport}" class="w-full bg-slate-900 text-white rounded-xl px-4 py-3 border border-slate-800 focus:border-purple-500 outline-none text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1">Official Channel URL</label>
+                            <input type="url" id="set-channel" value="${state.settings.officialChannel}" class="w-full bg-slate-900 text-white rounded-xl px-4 py-3 border border-slate-800 focus:border-purple-500 outline-none text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1">Start Working URL</label>
+                            <input type="url" id="set-work" value="${state.settings.startWorking}" class="w-full bg-slate-900 text-white rounded-xl px-4 py-3 border border-slate-800 focus:border-purple-500 outline-none text-sm">
+                        </div>
+                        
+                        <button data-action="save-settings" class="w-full mt-4 bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 rounded-xl transition-colors">
+                            Save Changes
+                        </button>
+                    </div>
+
+                    <div class="mt-8 pt-6 border-t border-slate-800">
+                        <h2 class="text-sm font-semibold text-slate-400 mb-4">Categories</h2>
+                        <div class="flex gap-2 mb-4">
+                            <input type="text" id="new-cat" placeholder="New Category" class="flex-1 bg-slate-900 text-white rounded-xl px-4 py-2 border border-slate-800 outline-none text-sm">
+                            <button data-action="add-category" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-medium">Add</button>
+                        </div>
+                        <div class="space-y-2">
+                            ${state.categories.map(c => `
+                                <div class="flex items-center justify-between bg-slate-900 p-3 rounded-xl border border-slate-800">
+                                    <span class="text-sm text-slate-200">${c.name}</span>
+                                    <button data-action="delete-category" data-id="${c.id}" class="text-red-400 hover:bg-red-500/10 p-1.5 rounded"><i class="ph ph-x"></i></button>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- Modals Engine ---
+        function showModal(html) {
+            const container = document.getElementById('modal-container');
+            container.innerHTML = `
+                <div class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[100] flex items-end sm:items-center justify-center fade-in">
+                    <div class="bg-slate-900 w-full max-w-md rounded-t-3xl sm:rounded-3xl border border-slate-800 p-6 pb-safe max-h-[90vh] overflow-y-auto no-scrollbar slide-up">
+                        ${html}
+                    </div>
+                </div>
+            `;
+        }
+        function closeModal() {
+            document.getElementById('modal-container').innerHTML = '';
+        }
+
+        function openVideoModal(videoId = null) {
+            const v = videoId ? state.videos.find(x => x.id === videoId) : {};
+            const isEdit = !!videoId;
+            
+            showModal(`
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold text-white">${isEdit ? 'Edit Video' : 'Add Video'}</h2>
+                    <button data-action="close-modal" class="text-slate-400 hover:text-white"><i class="ph ph-x text-2xl"></i></button>
+                </div>
+                <form id="videoForm" class="space-y-4">
+                    <input type="hidden" id="v_id" value="${v.id || ''}">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Title</label>
+                        <input type="text" id="v_title" required value="${v.title || ''}" class="w-full bg-slate-950 text-white rounded-xl px-4 py-3 border border-slate-800 focus:border-blue-500 outline-none text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">YouTube URL</label>
+                        <input type="url" id="v_url" required value="${v.videoUrl || ''}" class="w-full bg-slate-950 text-white rounded-xl px-4 py-3 border border-slate-800 focus:border-blue-500 outline-none text-sm">
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1">Category</label>
+                            <select id="v_category" class="w-full bg-slate-950 text-white rounded-xl px-4 py-3 border border-slate-800 focus:border-blue-500 outline-none text-sm">
+                                ${state.categories.map(c => `<option value="${c.id}" ${v.categoryId === c.id ? 'selected' : ''}>${c.name}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1">Duration</label>
+                            <input type="text" id="v_duration" value="${v.duration || ''}" placeholder="e.g. 10:00" class="w-full bg-slate-950 text-white rounded-xl px-4 py-3 border border-slate-800 focus:border-blue-500 outline-none text-sm">
+                        </div>
+                    </div>
+                    
+                    <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                        <label class="block text-xs font-medium text-slate-400 mb-2">Thumbnail</label>
+                        <div class="flex gap-2 mb-2">
+                            <input type="file" id="v_file" accept="image/*" class="text-xs text-slate-400 file:mr-2 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-slate-800 file:text-blue-400 hover:file:bg-slate-700 w-full">
+                        </div>
+                        <div class="text-center text-xs text-slate-500 mb-2">- OR PASTE URL -</div>
+                        <input type="url" id="v_thumb_url" value="${v.thumbnail || ''}" placeholder="Leave empty to auto-fetch YT" class="w-full bg-slate-900 text-white rounded-lg px-3 py-2 border border-slate-800 outline-none text-sm">
+                    </div>
+
+                    <div class="flex items-center justify-between bg-slate-950 p-3 rounded-xl border border-slate-800">
+                        <label class="text-sm font-medium text-slate-300">Featured Video</label>
+                        <input type="checkbox" id="v_featured" ${v.featured ? 'checked' : ''} class="w-5 h-5 rounded accent-blue-500 bg-slate-800 border-slate-700">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Status</label>
+                        <select id="v_status" class="w-full bg-slate-950 text-white rounded-xl px-4 py-3 border border-slate-800 outline-none text-sm">
+                            <option value="published" ${v.status === 'published' ? 'selected' : ''}>Published</option>
+                            <option value="hidden" ${v.status === 'hidden' ? 'selected' : ''}>Hidden</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Short Description</label>
+                        <textarea id="v_desc" rows="2" class="w-full bg-slate-950 text-white rounded-xl px-4 py-3 border border-slate-800 focus:border-blue-500 outline-none text-sm resize-none">${v.description || ''}</textarea>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Step-by-Step Guide (**bold**)</label>
+                        <textarea id="v_guide" rows="4" class="w-full bg-slate-950 text-white rounded-xl px-4 py-3 border border-slate-800 focus:border-blue-500 outline-none text-sm resize-none">${v.guide || ''}</textarea>
+                    </div>
+                    <button type="button" data-action="save-video" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3.5 rounded-xl transition-colors mt-4">
+                        Save Video
+                    </button>
+                </form>
+            `);
+        }
+
+        function openToolModal(toolId = null) {
+            const t = toolId ? state.tools.find(x => x.id === toolId) : {};
+            const isEdit = !!toolId;
+            
+            showModal(`
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold text-white">${isEdit ? 'Edit Tool/APK' : 'Add Tool/APK'}</h2>
+                    <button data-action="close-modal" class="text-slate-400 hover:text-white"><i class="ph ph-x text-2xl"></i></button>
+                </div>
+                <form id="toolForm" class="space-y-4">
+                    <input type="hidden" id="t_id" value="${t.id || ''}">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Title</label>
+                        <input type="text" id="t_title" required value="${t.title || ''}" class="w-full bg-slate-950 text-white rounded-xl px-4 py-3 border border-slate-800 focus:border-amber-500 outline-none text-sm">
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1">File Type</label>
+                            <input type="text" id="t_type" value="${t.fileType || 'APK'}" placeholder="APK, ZIP, PDF" class="w-full bg-slate-950 text-white rounded-xl px-4 py-3 border border-slate-800 focus:border-amber-500 outline-none text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1">Size</label>
+                            <input type="text" id="t_size" value="${t.size || ''}" placeholder="e.g. 15 MB" class="w-full bg-slate-950 text-white rounded-xl px-4 py-3 border border-slate-800 outline-none text-sm">
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                        <label class="block text-xs font-medium text-slate-400 mb-2">Tool File (Upload)</label>
+                        <input type="file" id="t_file_upload" class="text-xs text-slate-400 file:mr-2 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-slate-800 file:text-amber-400 hover:file:bg-slate-700 w-full mb-2">
+                        <div class="text-center text-xs text-slate-500 mb-2">- OR EXTERNAL LINK -</div>
+                        <input type="url" id="t_file_url" value="${t.fileUrl || ''}" placeholder="https://..." class="w-full bg-slate-900 text-white rounded-lg px-3 py-2 border border-slate-800 outline-none text-sm">
+                    </div>
+
+                    <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                        <label class="block text-xs font-medium text-slate-400 mb-2">Icon/Thumbnail Image</label>
+                        <input type="file" id="t_thumb_upload" accept="image/*" class="text-xs text-slate-400 file:mr-2 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-slate-800 file:text-blue-400 hover:file:bg-slate-700 w-full mb-2">
+                        <div class="text-center text-xs text-slate-500 mb-2">- OR IMAGE URL -</div>
+                        <input type="url" id="t_thumb_url" value="${t.thumbnail || ''}" placeholder="https://..." class="w-full bg-slate-900 text-white rounded-lg px-3 py-2 border border-slate-800 outline-none text-sm">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Status</label>
+                        <select id="t_status" class="w-full bg-slate-950 text-white rounded-xl px-4 py-3 border border-slate-800 outline-none text-sm">
+                            <option value="published" ${t.status === 'published' ? 'selected' : ''}>Published</option>
+                            <option value="hidden" ${t.status === 'hidden' ? 'selected' : ''}>Hidden</option>
+                        </select>
+                    </div>
+
+                    <button type="button" data-action="save-tool" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-3.5 rounded-xl transition-colors mt-4">
+                        Save Tool
+                    </button>
+                </form>
+            `);
+        }
+
+        // --- Event Delegation ---
+        document.body.addEventListener('click', async (e) => {
+            const btn = e.target.closest('[data-action]');
+            if(!btn) return;
+
+            const action = btn.getAttribute('data-action');
+            const id = btn.getAttribute('data-id');
+
+            // Nav
+            if (action.startsWith('nav-')) {
+                state.currentView = action.replace('nav-', '');
+                render();
+            }
+            if (action === 'go-admin') {
+                if (!state.isAuthorizedAdminUser) {
+                    return showToast('Access Denied: Only authorized Telegram accounts can access the admin panel.', 'error');
+                }
+                state.currentView = state.isAdmin ? 'admin-dashboard' : 'admin-login';
+                render();
+            }
+
+            // User Actions
+            if (action === 'filter-cat') {
+                state.selectedCategory = id;
+                render();
+            }
+            if (action === 'view-video') {
+                state.activeEntityId = id;
+                state.currentView = 'video-detail';
+                render();
+            }
+            if (action === 'download-tool') {
+                const url = btn.getAttribute('data-url');
+                if(!url) return showToast('Download link not available', 'error');
+                
+                // Track Download
+                if(state.user) {
+                    const t = state.tools.find(x => x.id === id);
+                    if(t) updateDoc(doc(getCollectionPath('tools'), id), { downloads: (t.downloads || 0) + 1 }).catch(()=>{});
+                }
+                
+                window.open(url, '_blank');
+            }
+
+            // Admin Auth
+            if (action === 'do-login') {
+                const pin = document.getElementById('adminPin').value;
+                if(pin === '1234') { // Using static PIN for preview environment constraints
+                    state.isAdmin = true;
+                    state.currentView = 'admin-dashboard';
+                    render();
+                    showToast('Admin access granted', 'success');
+                } else {
+                    showToast('Invalid PIN', 'error');
+                }
+            }
+            if (action === 'do-logout') {
+                state.isAdmin = false;
+                state.currentView = 'home';
+                render();
+                showToast('Logged out of admin');
+            }
+
+            // Admin Modals
+            if (action === 'close-modal') {
+                closeModal();
+            }
+            if (action === 'modal-video-add') {
+                openVideoModal();
+            }
+            if (action === 'modal-video-edit') {
+                openVideoModal(id);
+            }
+            if (action === 'modal-tool-add') {
+                openToolModal();
+            }
+            if (action === 'modal-tool-edit') {
+                openToolModal(id);
+            }
+
+            // Save Entities
+            if (action === 'save-video') {
+                if(!state.user) return showToast('Not authenticated', 'error');
+                const formId = document.getElementById('v_id').value;
+                const title = document.getElementById('v_title').value.trim();
+                const url = document.getElementById('v_url').value.trim();
+                
+                if(!title || !url) return showToast('Title and URL required', 'error');
+                
+                const btnText = btn.innerHTML;
+                btn.innerHTML = '<i class="ph ph-spinner animate-spin"></i> Saving...';
+                btn.disabled = true;
+
+                try {
+                    let thumbUrl = document.getElementById('v_thumb_url').value.trim();
+                    const fileInput = document.getElementById('v_file');
+                    
+                    if (fileInput.files.length > 0) {
+                        try {
+                            thumbUrl = await uploadFileToStorage(fileInput.files[0], 'thumbnails');
+                        } catch(err) {
+                            console.error(err);
+                            showToast("Storage upload failed, using URL fallback if provided", "error");
+                        }
+                    }
+
+                    if (!thumbUrl) {
+                        const ytId = extractYTId(url);
+                        thumbUrl = ytId ? `https://img.youtube.com/vi/${ytId}/maxresdefault.jpg` : `https://placehold.co/600x400/1e293b/94a3b8?text=Video`;
+                    }
+
+                    const payload = {
+                        title,
+                        videoUrl: url,
+                        categoryId: document.getElementById('v_category').value,
+                        duration: document.getElementById('v_duration').value.trim(),
+                        thumbnail: thumbUrl,
+                        status: document.getElementById('v_status').value,
+                        featured: document.getElementById('v_featured').checked,
+                        description: document.getElementById('v_desc').value.trim(),
+                        guide: document.getElementById('v_guide').value.trim(),
+                        updatedAt: Date.now()
+                    };
+
+                    const docId = formId || generateId();
+                    if(!formId) {
+                        payload.id = docId;
+                        payload.createdAt = Date.now();
+                        payload.views = 0;
+                    }
+
+                    await setDoc(doc(getCollectionPath('videos'), docId), payload, { merge: true });
+                    showToast('Video saved', 'success');
+                    closeModal();
+                } catch(e) {
+                    console.error(e);
+                    showToast('Failed to save', 'error');
+                } finally {
+                    btn.innerHTML = btnText;
+                    btn.disabled = false;
+                }
+            }
+
+            if (action === 'save-tool') {
+                if(!state.user) return showToast('Not authenticated', 'error');
+                const formId = document.getElementById('t_id').value;
+                const title = document.getElementById('t_title').value.trim();
+                
+                if(!title) return showToast('Title is required', 'error');
+
+                const btnText = btn.innerHTML;
+                btn.innerHTML = '<i class="ph ph-spinner animate-spin"></i> Saving...';
+                btn.disabled = true;
+
+                try {
+                    let fileUrl = document.getElementById('t_file_url').value.trim();
+                    const fileUpload = document.getElementById('t_file_upload');
+                    if (fileUpload.files.length > 0) {
+                        try {
+                            fileUrl = await uploadFileToStorage(fileUpload.files[0], 'tools');
+                        } catch(err) {
+                            console.error(err);
+                            showToast("File upload failed, ensure URL is provided", "error");
+                        }
+                    }
+                    if(!fileUrl) throw new Error("A File URL or Upload is required");
+
+                    let thumbUrl = document.getElementById('t_thumb_url').value.trim();
+                    const thumbUpload = document.getElementById('t_thumb_upload');
+                    if (thumbUpload.files.length > 0) {
+                        try {
+                            thumbUrl = await uploadFileToStorage(thumbUpload.files[0], 'thumbnails');
+                        } catch(err) { console.error(err); }
+                    }
+                    if(!thumbUrl) thumbUrl = 'https://placehold.co/100/1e293b/94a3b8?text=Tool';
+
+                    const payload = {
+                        title,
+                        fileType: document.getElementById('t_type').value.trim() || 'FILE',
+                        size: document.getElementById('t_size').value.trim(),
+                        fileUrl,
+                        thumbnail: thumbUrl,
+                        status: document.getElementById('t_status').value,
+                        updatedAt: Date.now()
+                    };
+
+                    const docId = formId || generateId();
+                    if(!formId) {
+                        payload.id = docId;
+                        payload.createdAt = Date.now();
+                        payload.downloads = 0;
+                    }
+
+                    await setDoc(doc(getCollectionPath('tools'), docId), payload, { merge: true });
+                    showToast('Tool saved', 'success');
+                    closeModal();
+                } catch(e) {
+                    console.error(e);
+                    showToast(e.message || 'Failed to save', 'error');
+                } finally {
+                    btn.innerHTML = btnText;
+                    btn.disabled = false;
+                }
+            }
+
+            // Deletion (Custom Toast logic to avoid alert/confirm)
+            if (action === 'delete-video') {
+                try {
+                    await deleteDoc(doc(getCollectionPath('videos'), id));
+                    showToast('Video deleted', 'success');
+                } catch(e) { showToast('Delete failed', 'error'); }
+            }
+            if (action === 'delete-tool') {
+                try {
+                    await deleteDoc(doc(getCollectionPath('tools'), id));
+                    showToast('Tool deleted', 'success');
+                } catch(e) { showToast('Delete failed', 'error'); }
+            }
+            
+            // Settings & Categories
+            if (action === 'save-settings') {
+                if(!state.user) return;
+                const payload = {
+                    telegramSupport: document.getElementById('set-support').value.trim(),
+                    officialChannel: document.getElementById('set-channel').value.trim(),
+                    startWorking: document.getElementById('set-work').value.trim()
+                };
+                try {
+                    await setDoc(doc(getCollectionPath('settings'), 'support_links'), payload, { merge: true });
+                    showToast('Settings saved', 'success');
+                } catch(e) { showToast('Failed to save', 'error'); }
+            }
+            if (action === 'add-category') {
+                const name = document.getElementById('new-cat').value.trim();
+                if(!name) return;
+                const catId = generateId();
+                try {
+                    await setDoc(doc(getCollectionPath('categories'), catId), { id: catId, name });
+                    document.getElementById('new-cat').value = '';
+                    showToast('Category added');
+                } catch(e) {}
+            }
+            if (action === 'delete-category') {
+                if(state.videos.some(v => v.categoryId === id)) {
+                    return showToast('Cannot delete: Category in use', 'error');
+                }
+                try {
+                    await deleteDoc(doc(getCollectionPath('categories'), id));
+                    showToast('Category deleted');
+                } catch(e) {}
+            }
+        });
+
+        // Initialize App
+        initAuth();
+
+    </script>
+</body>
+</html>
