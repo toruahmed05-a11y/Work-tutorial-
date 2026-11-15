@@ -283,20 +283,20 @@
                 if (initialAuthToken) {
                     await signInWithCustomToken(auth, initialAuthToken);
                 } else {
+                    // এটি শুধুমাত্র ডাটাবেজ থেকে ভিডিও পড়ার জন্য একটি গেস্ট কানেকশন, কোনো ইউজার ডেটা সেভ হয় না।
                     await signInAnonymously(auth);
                 }
                 state.user = auth.currentUser;
-                setupDataListeners();
             } catch (error) {
-                console.error("Auth error:", error);
-                showToast("Authentication error, previewing locally.", "error");
+                // কোনো এরর হলে ইউজারকে না দেখিয়ে সাইলেন্টলি ইগনোর করবে এবং পাবলিক ভিডিও লোড করবে
+                console.warn("Guest connection skipped. Loading public data...", error);
+            } finally {
+                setupDataListeners();
                 render();
             }
         }
 
         function setupDataListeners() {
-            if(!state.user) return;
-
             // Clear old listeners
             state.unsubscribes.forEach(unsub => unsub());
             state.unsubscribes = [];
@@ -660,9 +660,9 @@
             };
 
             // Increment views (debounce/lock to prevent spam ideally, but simple for demo)
-            if(state.user && !video._viewCounted) {
+            if(!video._viewCounted) {
                 video._viewCounted = true;
-                updateDoc(doc(getCollectionPath('videos'), video.id), { views: (video.views || 0) + 1 }).catch(e=>console.log(e));
+                updateDoc(doc(getCollectionPath('videos'), video.id), { views: (video.views || 0) + 1 }).catch(e => console.warn("View count update skipped for guest"));
             }
 
             return `
@@ -1099,10 +1099,8 @@
                 if(!url) return showToast('Download link not available', 'error');
                 
                 // Track Download
-                if(state.user) {
-                    const t = state.tools.find(x => x.id === id);
-                    if(t) updateDoc(doc(getCollectionPath('tools'), id), { downloads: (t.downloads || 0) + 1 }).catch(()=>{});
-                }
+                const t = state.tools.find(x => x.id === id);
+                if(t) updateDoc(doc(getCollectionPath('tools'), id), { downloads: (t.downloads || 0) + 1 }).catch(()=>{});
                 
                 window.open(url, '_blank');
             }
@@ -1145,7 +1143,7 @@
 
             // Save Entities
             if (action === 'save-video') {
-                if(!state.user) return showToast('Not authenticated', 'error');
+                if(!state.isAdmin) return showToast('Not authorized', 'error');
                 const formId = document.getElementById('v_id').value;
                 const title = document.getElementById('v_title').value.trim();
                 const url = document.getElementById('v_url').value.trim();
@@ -1207,7 +1205,7 @@
             }
 
             if (action === 'save-tool') {
-                if(!state.user) return showToast('Not authenticated', 'error');
+                if(!state.isAdmin) return showToast('Not authorized', 'error');
                 const formId = document.getElementById('t_id').value;
                 const title = document.getElementById('t_title').value.trim();
                 
@@ -1284,7 +1282,7 @@
             
             // Settings & Categories
             if (action === 'save-settings') {
-                if(!state.user) return;
+                if(!state.isAdmin) return showToast('Not authorized', 'error');
                 const payload = {
                     telegramSupport: document.getElementById('set-support').value.trim(),
                     officialChannel: document.getElementById('set-channel').value.trim(),
