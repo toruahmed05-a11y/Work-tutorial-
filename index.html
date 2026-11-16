@@ -1,10 +1,19 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Tutorial & Tools Hub</title>
     
+    <!-- Theme Initialization (Prevents FOUC) -->
+    <script>
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    </script>
+
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
@@ -16,6 +25,7 @@
 
     <script>
         tailwind.config = {
+            darkMode: 'class',
             theme: {
                 extend: {
                     colors: {
@@ -41,10 +51,7 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         
         body {
-            background-color: #020617;
-            color: #f8fafc;
             -webkit-tap-highlight-color: transparent;
-            zoom: 0.95; /* Page zoom out to prevent scrolling for nav */
         }
 
         .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -66,13 +73,6 @@
         @keyframes slideDown {
             from { transform: translateY(-20px); opacity: 0; }
             to { transform: translateY(0); opacity: 1; }
-        }
-
-        .glass-nav {
-            background: rgba(15, 23, 42, 0.85);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border-top: 1px solid rgba(255,255,255,0.05);
         }
         
         /* Hides bottom nav when virtual keyboard is open */
@@ -125,42 +125,53 @@
         }
     </style>
 </head>
-<body class="antialiased min-h-screen flex justify-center">
+<body class="antialiased h-[100dvh] flex justify-center bg-slate-100 dark:bg-slate-950 overflow-hidden text-slate-900 dark:text-slate-50 transition-colors duration-300">
 
     <!-- Mobile Constrained App Container -->
-    <div id="app" class="w-full max-w-md bg-slate-900 min-h-screen relative shadow-2xl overflow-hidden flex flex-col">
+    <div id="app" class="w-full max-w-md bg-white dark:bg-slate-900 h-[100dvh] relative shadow-2xl overflow-hidden flex flex-col transition-colors duration-300">
         
-        <!-- Top Header -->
-        <header class="h-16 flex items-center justify-between px-6 bg-slate-900/90 backdrop-blur-md sticky top-0 z-40 border-b border-slate-800">
-            <h1 class="text-xl font-bold bg-gradient-to-r from-blue-400 to-indigo-500 bg-clip-text text-transparent flex items-center gap-2">
+        <!-- Top Header (Fixed at top inside container) -->
+        <header class="shrink-0 h-16 flex items-center justify-between px-6 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md z-40 border-b border-slate-200 dark:border-slate-800 transition-colors duration-300">
+            <h1 class="text-xl font-bold bg-gradient-to-r from-blue-500 to-indigo-600 dark:from-blue-400 dark:to-indigo-500 bg-clip-text text-transparent flex items-center gap-2">
                 <i class="ph-fill ph-rocket-launch text-blue-500"></i> WorkHub
             </h1>
-            <button id="admin-btn" data-action="go-admin" class="hidden w-10 h-10 rounded-full flex items-center justify-center text-slate-500 hover:text-white transition-colors bg-slate-800/50">
-                <i class="ph ph-lock-key text-lg"></i>
-            </button>
+            
+            <!-- Actions Section -->
+            <div class="flex items-center gap-2">
+                <!-- Theme Toggle (Visible to All) -->
+                <button id="theme-toggle" data-action="toggle-theme" class="w-9 h-9 rounded-full flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors bg-slate-100 dark:bg-slate-800/50">
+                    <i class="ph ph-sun text-lg dark:hidden block"></i>
+                    <i class="ph ph-moon text-lg hidden dark:block"></i>
+                </button>
+                
+                <!-- Admin Button (Hidden by default, shown based on role) -->
+                <button id="admin-btn" data-action="go-admin" class="hidden w-9 h-9 rounded-full flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors bg-slate-100 dark:bg-slate-800/50">
+                    <i class="ph ph-lock-key text-lg"></i>
+                </button>
+            </div>
         </header>
 
-        <!-- Dynamic View Container -->
-        <main id="view-container" class="flex-1 overflow-y-auto overflow-x-hidden pb-24 no-scrollbar bg-slate-950">
+        <!-- Dynamic View Container (Takes remaining space, scrolls internally) -->
+        <main id="view-container" class="flex-1 overflow-y-auto overflow-x-hidden no-scrollbar bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
             <!-- Renders dynamically -->
         </main>
 
-        <!-- Bottom Navigation (4 Tabs) -->
-        <nav id="bottom-nav" class="hidden absolute bottom-0 w-full glass-nav px-4 py-3 pb-safe z-50 transition-transform fade-in">
+        <!-- Bottom Navigation (Fixed at bottom inside container) -->
+        <nav id="bottom-nav" class="shrink-0 hidden w-full bg-white/85 dark:bg-slate-900/85 backdrop-blur-md border-t border-slate-200 dark:border-white/5 px-4 py-3 pb-safe z-50 transition-all duration-300 fade-in">
             <div class="flex justify-between items-center max-w-sm mx-auto">
-                <button data-action="nav-home" class="nav-btn flex flex-col items-center flex-1 text-slate-400 hover:text-blue-400 transition-colors">
+                <button data-action="nav-home" class="nav-btn flex flex-col items-center flex-1 text-slate-400 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">
                     <i class="ph ph-house text-2xl mb-1 transition-transform"></i>
                     <span class="text-[10px] font-medium">Home</span>
                 </button>
-                <button data-action="nav-videos" class="nav-btn flex flex-col items-center flex-1 text-slate-400 hover:text-blue-400 transition-colors">
+                <button data-action="nav-videos" class="nav-btn flex flex-col items-center flex-1 text-slate-400 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">
                     <i class="ph ph-play-circle text-2xl mb-1 transition-transform"></i>
                     <span class="text-[10px] font-medium">Videos</span>
                 </button>
-                <button data-action="nav-tools" class="nav-btn flex flex-col items-center flex-1 text-slate-400 hover:text-blue-400 transition-colors">
+                <button data-action="nav-tools" class="nav-btn flex flex-col items-center flex-1 text-slate-400 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">
                     <i class="ph ph-wrench text-2xl mb-1 transition-transform"></i>
                     <span class="text-[10px] font-medium">Tools</span>
                 </button>
-                <button data-action="nav-support" class="nav-btn flex flex-col items-center flex-1 text-slate-400 hover:text-blue-400 transition-colors">
+                <button data-action="nav-support" class="nav-btn flex flex-col items-center flex-1 text-slate-400 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">
                     <i class="ph ph-headset text-2xl mb-1 transition-transform"></i>
                     <span class="text-[10px] font-medium">Support</span>
                 </button>
@@ -209,8 +220,8 @@
         const tg = window.Telegram?.WebApp;
         if(tg) {
             tg.expand();
-            tg.setHeaderColor('#0f172a');
-            tg.setBackgroundColor('#020617');
+            tg.setHeaderColor(document.documentElement.classList.contains('dark') ? '#0f172a' : '#ffffff');
+            tg.setBackgroundColor(document.documentElement.classList.contains('dark') ? '#020617' : '#f8fafc');
         }
 
         // Global Keyboard/Input handler to hide bottom nav to prevent layout jump
@@ -299,17 +310,15 @@
             return new Date(ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
         }
 
-        // Automatically append MB if user only provided a number
         function formatSize(size) {
             if(!size) return 'Unknown size';
             const s = size.toString().trim();
-            if(/[a-zA-Z]/.test(s)) return s; // already contains letters (MB, GB, etc.)
+            if(/[a-zA-Z]/.test(s)) return s; 
             return s + ' MB';
         }
 
         // --- Firebase Data Fetching ---
         function getCollectionPath(collectionName) {
-            // STRICT RULE: path structure
             return collection(db, 'artifacts', appId, 'public', 'data', collectionName);
         }
 
@@ -318,7 +327,6 @@
                 if (initialAuthToken) {
                     await signInWithCustomToken(auth, initialAuthToken);
                 } else {
-                    // Guest connection
                     await signInAnonymously(auth);
                 }
                 state.user = auth.currentUser;
@@ -440,13 +448,19 @@
                 const tabs = ['home', 'videos', 'tools', 'support'];
                 tabs.forEach(tab => {
                     const btn = bottomNav.querySelector(`[data-action="nav-${tab}"]`);
+                    if(!btn) return;
+                    
                     const icon = btn.querySelector('i');
                     if (state.currentView === tab) {
-                        btn.classList.replace('text-slate-400', 'text-blue-500');
+                        btn.classList.replace('text-slate-400', 'text-blue-600');
+                        btn.classList.add('dark:text-blue-400');
+                        btn.classList.remove('dark:hover:text-blue-400');
                         icon.classList.replace('ph', 'ph-fill');
                         icon.classList.add('-translate-y-1');
                     } else {
-                        btn.classList.replace('text-blue-500', 'text-slate-400');
+                        btn.classList.replace('text-blue-600', 'text-slate-400');
+                        btn.classList.remove('dark:text-blue-400');
+                        btn.classList.add('dark:hover:text-blue-400');
                         icon.classList.replace('ph-fill', 'ph');
                         icon.classList.remove('-translate-y-1');
                     }
@@ -481,34 +495,34 @@
                 <div class="fade-in pb-8 w-full">
                     <!-- Skeleton Banner -->
                     <div class="pt-6 px-6 mb-2">
-                        <div class="w-full aspect-video rounded-2xl bg-slate-800/50 animate-pulse border border-slate-700/30"></div>
+                        <div class="w-full aspect-video rounded-2xl bg-slate-200 dark:bg-slate-800/50 animate-pulse border border-slate-300 dark:border-slate-700/30"></div>
                     </div>
                     
                     <!-- Skeleton Featured -->
                     <div class="mt-6 px-6">
-                        <div class="h-5 bg-slate-800/50 rounded w-1/3 mb-4 animate-pulse"></div>
+                        <div class="h-5 bg-slate-200 dark:bg-slate-800/50 rounded w-1/3 mb-4 animate-pulse"></div>
                         <div class="flex gap-4 overflow-hidden">
-                            <div class="w-64 aspect-video bg-slate-800/50 rounded-2xl shrink-0 animate-pulse border border-slate-700/30"></div>
-                            <div class="w-64 aspect-video bg-slate-800/50 rounded-2xl shrink-0 animate-pulse border border-slate-700/30"></div>
+                            <div class="w-64 aspect-video bg-slate-200 dark:bg-slate-800/50 rounded-2xl shrink-0 animate-pulse border border-slate-300 dark:border-slate-700/30"></div>
+                            <div class="w-64 aspect-video bg-slate-200 dark:bg-slate-800/50 rounded-2xl shrink-0 animate-pulse border border-slate-300 dark:border-slate-700/30"></div>
                         </div>
                     </div>
 
                     <!-- Skeleton Latest Tools -->
                     <div class="mt-6 px-6">
                         <div class="flex justify-between items-center mb-4">
-                            <div class="h-5 bg-slate-800/50 rounded w-1/3 animate-pulse"></div>
-                            <div class="h-4 bg-slate-800/50 rounded w-16 animate-pulse"></div>
+                            <div class="h-5 bg-slate-200 dark:bg-slate-800/50 rounded w-1/3 animate-pulse"></div>
+                            <div class="h-4 bg-slate-200 dark:bg-slate-800/50 rounded w-16 animate-pulse"></div>
                         </div>
                         <div class="grid grid-cols-2 gap-4">
-                            <div class="bg-slate-800/40 border border-slate-700/30 p-4 rounded-2xl h-36 flex flex-col items-center justify-center animate-pulse">
-                                <div class="w-12 h-12 rounded-xl bg-slate-700/50 mb-3"></div>
-                                <div class="h-3 bg-slate-700/50 w-3/4 rounded mb-2"></div>
-                                <div class="h-3 bg-slate-700/50 w-1/2 rounded"></div>
+                            <div class="bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/30 p-4 rounded-2xl h-36 flex flex-col items-center justify-center animate-pulse">
+                                <div class="w-12 h-12 rounded-xl bg-slate-200 dark:bg-slate-700/50 mb-3"></div>
+                                <div class="h-3 bg-slate-200 dark:bg-slate-700/50 w-3/4 rounded mb-2"></div>
+                                <div class="h-3 bg-slate-200 dark:bg-slate-700/50 w-1/2 rounded"></div>
                             </div>
-                            <div class="bg-slate-800/40 border border-slate-700/30 p-4 rounded-2xl h-36 flex flex-col items-center justify-center animate-pulse">
-                                <div class="w-12 h-12 rounded-xl bg-slate-700/50 mb-3"></div>
-                                <div class="h-3 bg-slate-700/50 w-3/4 rounded mb-2"></div>
-                                <div class="h-3 bg-slate-700/50 w-1/2 rounded"></div>
+                            <div class="bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/30 p-4 rounded-2xl h-36 flex flex-col items-center justify-center animate-pulse">
+                                <div class="w-12 h-12 rounded-xl bg-slate-200 dark:bg-slate-700/50 mb-3"></div>
+                                <div class="h-3 bg-slate-200 dark:bg-slate-700/50 w-3/4 rounded mb-2"></div>
+                                <div class="h-3 bg-slate-200 dark:bg-slate-700/50 w-1/2 rounded"></div>
                             </div>
                         </div>
                     </div>
@@ -528,25 +542,25 @@
                 <div class="fade-in pb-8">
                     <!-- Notice Banner (16:9) loaded instantly -->
                     <div class="pt-6 px-6 mb-2">
-                        <div class="w-full aspect-video rounded-2xl overflow-hidden relative shadow-lg border border-slate-800 bg-slate-900">
+                        <div class="w-full aspect-video rounded-2xl overflow-hidden relative shadow-lg border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900">
                             <img src="${state.settings.noticeBanner || 'https://placehold.co/800x450/1e293b/94a3b8?text=Premium+Banner'}" class="w-full h-full object-cover transition-transform duration-500 hover:scale-105" onerror="this.src='https://placehold.co/800x450/1e293b/94a3b8?text=Notice+Banner'">
                         </div>
                     </div>
 
                     ${featured.length > 0 ? `
                     <div class="mt-6 px-6">
-                        <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                            <i class="ph-fill ph-star text-amber-400"></i> Featured
+                        <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                            <i class="ph-fill ph-star text-amber-500 dark:text-amber-400"></i> Featured
                         </h3>
                         <div class="flex gap-4 overflow-x-auto no-scrollbar pb-4 snap-x">
                             ${featured.map(v => `
                                 <div data-action="view-video" data-id="${v.id}" class="snap-start shrink-0 w-64 group cursor-pointer">
-                                    <div class="w-full aspect-video rounded-2xl bg-black overflow-hidden relative mb-3 border border-slate-800">
+                                    <div class="w-full aspect-video rounded-2xl bg-slate-100 dark:bg-black overflow-hidden relative mb-3 border border-slate-200 dark:border-slate-800">
                                         <img src="${v.thumbnail}" class="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500" onerror="this.src='https://placehold.co/600x400/1e293b/94a3b8?text=No+Image'">
-                                        <div class="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors"></div>
+                                        <div class="absolute inset-0 bg-black/5 dark:bg-black/20 group-hover:bg-transparent transition-colors"></div>
                                         <div class="absolute bottom-2 right-2 bg-black/70 px-2 py-1 rounded text-[10px] font-medium text-white backdrop-blur-sm">${v.duration || '00:00'}</div>
                                     </div>
-                                    <h4 class="text-sm font-semibold text-slate-200 line-clamp-2 leading-tight group-hover:text-blue-400 transition-colors">${v.title}</h4>
+                                    <h4 class="text-sm font-semibold text-slate-800 dark:text-slate-200 line-clamp-2 leading-tight group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">${v.title}</h4>
                                 </div>
                             `).join('')}
                         </div>
@@ -555,17 +569,17 @@
 
                     <div class="mt-6 px-6">
                         <div class="flex justify-between items-center mb-4">
-                            <h3 class="text-lg font-bold text-white">Latest Tools</h3>
-                            <button data-action="nav-tools" class="text-blue-500 text-sm font-medium">View All</button>
+                            <h3 class="text-lg font-bold text-slate-900 dark:text-white">Latest Tools</h3>
+                            <button data-action="nav-tools" class="text-blue-600 dark:text-blue-500 text-sm font-medium">View All</button>
                         </div>
                         <div class="grid grid-cols-2 gap-4">
                             ${latestTools.length === 0 ? `<p class="col-span-2 text-slate-500 text-sm text-center py-4">No tools available.</p>` : ''}
                             ${latestTools.map(t => `
-                                <div class="bg-slate-800 border border-slate-700 p-4 rounded-2xl flex flex-col items-center text-center">
-                                    <img src="${t.thumbnail}" class="w-12 h-12 rounded-xl mb-3 object-cover bg-slate-700" onerror="this.src='https://placehold.co/100/1e293b/94a3b8?text=APK'">
-                                    <h4 class="text-sm font-semibold text-slate-200 line-clamp-1 w-full">${t.title}</h4>
-                                    <span class="text-[10px] text-slate-400 mt-1 bg-slate-900 px-2 py-0.5 rounded-full">${t.fileType}</span>
-                                    <button data-action="download-tool" data-id="${t.id}" data-url="${t.fileUrl}" class="mt-3 w-full bg-blue-600/20 text-blue-400 hover:bg-blue-600 hover:text-white py-1.5 rounded-lg text-xs font-medium transition-colors">
+                                <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 rounded-2xl flex flex-col items-center text-center shadow-sm">
+                                    <img src="${t.thumbnail}" class="w-12 h-12 rounded-xl mb-3 object-cover bg-slate-100 dark:bg-slate-700" onerror="this.src='https://placehold.co/100/1e293b/94a3b8?text=APK'">
+                                    <h4 class="text-sm font-semibold text-slate-800 dark:text-slate-200 line-clamp-1 w-full">${t.title}</h4>
+                                    <span class="text-[10px] text-slate-500 dark:text-slate-400 mt-1 bg-slate-100 dark:bg-slate-900 px-2 py-0.5 rounded-full">${t.fileType}</span>
+                                    <button data-action="download-tool" data-id="${t.id}" data-url="${t.fileUrl}" class="mt-3 w-full bg-blue-100 dark:bg-blue-600/20 text-blue-600 dark:text-blue-400 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 dark:hover:text-white py-1.5 rounded-lg text-xs font-medium transition-colors">
                                         Download
                                     </button>
                                 </div>
@@ -593,15 +607,15 @@
             return pubVideos.map(v => {
                 const cat = state.categories.find(c => c.id === v.categoryId)?.name || 'Misc';
                 return `
-                    <div data-action="view-video" data-id="${v.id}" class="group cursor-pointer flex gap-4 bg-slate-900 p-3 rounded-2xl border border-slate-800 hover:border-slate-700 transition-colors fade-in">
-                        <div class="w-32 h-24 shrink-0 rounded-xl overflow-hidden relative bg-black border border-slate-800/50">
+                    <div data-action="view-video" data-id="${v.id}" class="group cursor-pointer flex gap-4 bg-white dark:bg-slate-900 p-3 rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition-colors shadow-sm dark:shadow-none fade-in">
+                        <div class="w-32 h-24 shrink-0 rounded-xl overflow-hidden relative bg-slate-100 dark:bg-black border border-slate-200 dark:border-slate-800/50">
                             <img src="${v.thumbnail}" class="w-full h-full object-contain" onerror="this.src='https://placehold.co/300x200/1e293b/94a3b8?text=Video'">
                             <div class="absolute bottom-1 right-1 bg-black/80 px-1.5 py-0.5 rounded text-[9px] font-medium text-white">${v.duration || '00:00'}</div>
                         </div>
                         <div class="flex-1 min-w-0 py-1 flex flex-col justify-between">
                             <div>
-                                <span class="text-[10px] font-semibold text-blue-400 uppercase tracking-wider">${cat}</span>
-                                <h3 class="text-sm font-semibold text-slate-100 leading-tight mt-0.5 line-clamp-2">${v.title}</h3>
+                                <span class="text-[10px] font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wider">${cat}</span>
+                                <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100 leading-tight mt-0.5 line-clamp-2">${v.title}</h3>
                             </div>
                             <div class="flex items-center text-xs text-slate-500 gap-3 mt-2">
                                 <span class="flex items-center gap-1"><i class="ph ph-eye"></i> ${v.views || 0}</span>
@@ -616,17 +630,17 @@
         function buildVideosView() {
             return `
                 <div class="fade-in h-full flex flex-col">
-                    <div class="sticky top-0 z-30 bg-slate-950/95 backdrop-blur-md pt-6 pb-2 px-6 border-b border-slate-800">
+                    <div class="sticky top-0 z-30 bg-slate-50/95 dark:bg-slate-950/95 backdrop-blur-md pt-6 pb-2 px-6 border-b border-slate-200 dark:border-slate-800">
                         <div class="relative mb-4">
                             <i class="ph ph-magnifying-glass absolute left-4 top-3.5 text-slate-400 text-lg"></i>
                             <input type="text" id="searchInput" placeholder="Search tutorials..." value="${state.searchQuery}"
-                                class="w-full bg-slate-900 text-white rounded-2xl py-3 pl-12 pr-4 border border-slate-800 focus:border-blue-500 outline-none transition-colors">
+                                class="w-full bg-white dark:bg-slate-900 text-slate-900 dark:text-white rounded-2xl py-3 pl-12 pr-4 border border-slate-200 dark:border-slate-800 focus:border-blue-500 outline-none transition-colors shadow-sm dark:shadow-none">
                         </div>
                         
                         <div class="flex gap-2 overflow-x-auto no-scrollbar pb-2">
-                            <button data-action="filter-cat" data-id="All" class="whitespace-nowrap px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${state.selectedCategory === 'All' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}">All</button>
+                            <button data-action="filter-cat" data-id="All" class="whitespace-nowrap px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${state.selectedCategory === 'All' ? 'bg-blue-600 text-white border-transparent' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'}">All</button>
                             ${state.categories.map(c => `
-                                <button data-action="filter-cat" data-id="${c.id}" class="whitespace-nowrap px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${state.selectedCategory === c.id ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}">${c.name}</button>
+                                <button data-action="filter-cat" data-id="${c.id}" class="whitespace-nowrap px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${state.selectedCategory === c.id ? 'bg-blue-600 text-white border-transparent' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'}">${c.name}</button>
                             `).join('')}
                         </div>
                     </div>
@@ -652,21 +666,21 @@
                 `;
             }
             return pubTools.map(t => `
-                <div class="bg-gradient-to-r from-slate-900 to-slate-800 p-4 rounded-2xl border border-slate-700/50 hover:border-blue-500/50 shadow-xl shadow-black/20 flex items-center gap-4 transition-all relative overflow-hidden group fade-in">
+                <div class="bg-gradient-to-r from-white to-slate-50 dark:from-slate-900 dark:to-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/50 hover:border-blue-400/50 dark:hover:border-blue-500/50 shadow-sm dark:shadow-xl dark:shadow-black/20 flex items-center gap-4 transition-all relative overflow-hidden group fade-in">
                     <div class="absolute inset-0 bg-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
-                    <div class="w-14 h-14 rounded-xl bg-slate-950 border border-slate-700/50 flex items-center justify-center shrink-0 p-1 z-10 shadow-inner">
+                    <div class="w-14 h-14 rounded-xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700/50 flex items-center justify-center shrink-0 p-1 z-10 shadow-inner">
                         <img src="${t.thumbnail}" class="w-full h-full object-contain rounded-lg" onerror="this.src='https://placehold.co/100/1e293b/94a3b8?text=Tool'">
                     </div>
                     <div class="flex-1 min-w-0 z-10">
-                        <h3 class="text-base font-bold text-slate-100 truncate">${t.title}</h3>
+                        <h3 class="text-base font-bold text-slate-900 dark:text-slate-100 truncate">${t.title}</h3>
                         <div class="flex items-center gap-2 mt-1.5">
-                            <span class="bg-blue-500/20 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded text-[10px] font-bold tracking-wide">${t.fileType || 'APK'}</span>
-                            <span class="text-xs font-medium text-slate-400 flex items-center gap-1">
+                            <span class="bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20 px-2 py-0.5 rounded text-[10px] font-bold tracking-wide">${t.fileType || 'APK'}</span>
+                            <span class="text-xs font-medium text-slate-500 dark:text-slate-400 flex items-center gap-1">
                                 <i class="ph-fill ph-hard-drive"></i> ${formatSize(t.size)}
                             </span>
                         </div>
                     </div>
-                    <button data-action="download-tool" data-id="${t.id}" data-url="${t.fileUrl}" class="w-11 h-11 shrink-0 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 text-white flex items-center justify-center hover:scale-105 shadow-lg shadow-blue-900/50 transition-all z-10">
+                    <button data-action="download-tool" data-id="${t.id}" data-url="${t.fileUrl}" class="w-11 h-11 shrink-0 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 dark:from-blue-600 dark:to-indigo-600 text-white flex items-center justify-center hover:scale-105 shadow-md shadow-blue-500/30 dark:shadow-lg dark:shadow-blue-900/50 transition-all z-10">
                         <i class="ph-bold ph-download-simple text-xl"></i>
                     </button>
                 </div>
@@ -676,11 +690,11 @@
         function buildToolsView() {
             return `
                 <div class="fade-in h-full flex flex-col">
-                    <div class="sticky top-0 z-30 bg-slate-950/95 backdrop-blur-md pt-6 pb-4 px-6 border-b border-slate-800">
+                    <div class="sticky top-0 z-30 bg-slate-50/95 dark:bg-slate-950/95 backdrop-blur-md pt-6 pb-4 px-6 border-b border-slate-200 dark:border-slate-800">
                         <div class="relative">
                             <i class="ph ph-magnifying-glass absolute left-4 top-3.5 text-slate-400 text-lg"></i>
                             <input type="text" id="searchInput" placeholder="Search premium tools, APKs..." value="${state.searchQuery}"
-                                class="w-full bg-slate-900 text-white rounded-2xl py-3 pl-12 pr-4 border border-slate-800 focus:border-blue-500 outline-none transition-colors">
+                                class="w-full bg-white dark:bg-slate-900 text-slate-900 dark:text-white rounded-2xl py-3 pl-12 pr-4 border border-slate-200 dark:border-slate-800 focus:border-blue-500 outline-none transition-colors shadow-sm dark:shadow-none">
                         </div>
                     </div>
 
@@ -694,40 +708,40 @@
         function buildSupportView() {
             return `
                 <div class="fade-in p-6 flex flex-col items-center justify-center min-h-[80vh]">
-                    <div class="w-24 h-24 bg-blue-600/10 rounded-full flex items-center justify-center mb-6">
-                        <i class="ph-fill ph-headset text-5xl text-blue-500"></i>
+                    <div class="w-24 h-24 bg-blue-100 dark:bg-blue-600/10 rounded-full flex items-center justify-center mb-6">
+                        <i class="ph-fill ph-headset text-5xl text-blue-600 dark:text-blue-500"></i>
                     </div>
-                    <h2 class="text-2xl font-bold text-white mb-2">Need Help?</h2>
-                    <p class="text-slate-400 text-center mb-8 text-sm">Join our community or reach out to support for any queries or assistance.</p>
+                    <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-2">Need Help?</h2>
+                    <p class="text-slate-600 dark:text-slate-400 text-center mb-8 text-sm">Join our community or reach out to support for any queries or assistance.</p>
                     
                     <div class="w-full space-y-4 max-w-sm">
-                        <a href="${state.settings.telegramSupport}" target="_blank" class="flex items-center justify-between bg-slate-900 border border-slate-800 p-4 rounded-2xl hover:border-blue-500 transition-colors group">
+                        <a href="${state.settings.telegramSupport}" target="_blank" class="flex items-center justify-between bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl hover:border-blue-500 dark:hover:border-blue-500 transition-colors group shadow-sm dark:shadow-none">
                             <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 group-hover:bg-blue-500 group-hover:text-white transition-colors">
+                                <div class="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center text-blue-600 dark:text-blue-400 group-hover:bg-blue-500 group-hover:text-white transition-colors">
                                     <i class="ph-fill ph-telegram-logo text-xl"></i>
                                 </div>
                                 <div>
-                                    <div class="text-slate-200 font-medium">Telegram Support</div>
+                                    <div class="text-slate-800 dark:text-slate-200 font-medium">Telegram Support</div>
                                     <div class="text-xs text-slate-500">Chat with our team</div>
                                 </div>
                             </div>
-                            <i class="ph ph-caret-right text-slate-500"></i>
+                            <i class="ph ph-caret-right text-slate-400 dark:text-slate-500"></i>
                         </a>
                         
-                        <a href="${state.settings.officialChannel}" target="_blank" class="flex items-center justify-between bg-slate-900 border border-slate-800 p-4 rounded-2xl hover:border-indigo-500 transition-colors group">
+                        <a href="${state.settings.officialChannel}" target="_blank" class="flex items-center justify-between bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl hover:border-indigo-500 dark:hover:border-indigo-500 transition-colors group shadow-sm dark:shadow-none">
                             <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-full bg-indigo-500/20 flex items-center justify-center text-indigo-400 group-hover:bg-indigo-500 group-hover:text-white transition-colors">
+                                <div class="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400 group-hover:bg-indigo-500 group-hover:text-white transition-colors">
                                     <i class="ph-fill ph-megaphone text-xl"></i>
                                 </div>
                                 <div>
-                                    <div class="text-slate-200 font-medium">Official Channel</div>
+                                    <div class="text-slate-800 dark:text-slate-200 font-medium">Official Channel</div>
                                     <div class="text-xs text-slate-500">Latest updates & news</div>
                                 </div>
                             </div>
-                            <i class="ph ph-caret-right text-slate-500"></i>
+                            <i class="ph ph-caret-right text-slate-400 dark:text-slate-500"></i>
                         </a>
 
-                        <a href="${state.settings.startWorking}" target="_blank" class="flex items-center justify-between bg-gradient-to-r from-blue-600 to-indigo-600 p-4 rounded-2xl hover:opacity-90 transition-opacity shadow-lg shadow-blue-900/50 mt-4">
+                        <a href="${state.settings.startWorking}" target="_blank" class="flex items-center justify-between bg-gradient-to-r from-blue-600 to-indigo-600 p-4 rounded-2xl hover:opacity-90 transition-opacity shadow-lg shadow-blue-500/30 dark:shadow-blue-900/50 mt-4">
                             <div class="flex items-center gap-3">
                                 <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white">
                                     <i class="ph-fill ph-briefcase text-xl"></i>
@@ -746,37 +760,35 @@
 
         function buildVideoDetailView() {
             const video = state.videos.find(v => v.id === state.activeEntityId);
-            if(!video) return `<div class="p-6 text-center text-red-400">Video not found</div>`;
+            if(!video) return `<div class="p-6 text-center text-red-500 dark:text-red-400">Video not found</div>`;
 
             const cat = state.categories.find(c => c.id === video.categoryId)?.name || 'Misc';
             const ytId = extractYTId(video.videoUrl || '');
             const isFirebaseVideo = video.videoUrl && video.videoUrl.includes('firebasestorage.googleapis.com');
 
-            // Basic Markdown for Guide
             const formatGuide = (text) => {
                 if(!text) return '<p class="text-slate-500 italic">No guide available.</p>';
                 let html = text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-                html = html.replace(/\*\*(.*?)\*\*/g, '<strong class="text-blue-400">$1</strong>');
+                html = html.replace(/\*\*(.*?)\*\*/g, '<strong class="text-blue-600 dark:text-blue-400">$1</strong>');
                 html = html.replace(/\n/g, '<br/>');
                 return html;
             };
 
-            // Increment views (debounce/lock to prevent spam ideally, but simple for demo)
             if(!video._viewCounted) {
                 video._viewCounted = true;
                 updateDoc(doc(getCollectionPath('videos'), video.id), { views: (video.views || 0) + 1 }).catch(e => console.warn("View count update skipped for guest"));
             }
 
             return `
-                <div class="fade-in bg-slate-950 min-h-screen pb-10">
-                    <div class="sticky top-0 z-50 bg-slate-900/90 backdrop-blur-md px-4 py-3 flex items-center gap-3 border-b border-slate-800">
-                        <button data-action="nav-videos" class="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-slate-300 hover:text-white transition-colors">
+                <div class="fade-in bg-slate-50 dark:bg-slate-950 min-h-full pb-10 flex flex-col">
+                    <div class="sticky top-0 z-50 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md px-4 py-3 flex items-center gap-3 border-b border-slate-200 dark:border-slate-800 shrink-0">
+                        <button data-action="nav-videos" class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors">
                             <i class="ph ph-arrow-left text-xl"></i>
                         </button>
-                        <h2 class="text-white font-semibold truncate flex-1">${video.title}</h2>
+                        <h2 class="text-slate-900 dark:text-white font-semibold truncate flex-1">${video.title}</h2>
                     </div>
 
-                    <div class="w-full aspect-video bg-black sticky top-[65px] z-40 shadow-xl border-b border-slate-800">
+                    <div class="w-full aspect-video bg-black shrink-0 border-b border-slate-200 dark:border-slate-800">
                         ${isFirebaseVideo ? 
                             `<video class="w-full h-full" src="${video.videoUrl}" controls controlsList="nodownload"></video>`
                         : ytId ? 
@@ -785,11 +797,11 @@
                         }
                     </div>
 
-                    <div class="p-6">
-                        <span class="inline-block bg-blue-500/20 text-blue-400 text-xs font-bold px-3 py-1 rounded-full mb-3">${cat}</span>
-                        <h1 class="text-2xl font-bold text-white leading-tight mb-3">${video.title}</h1>
+                    <div class="p-6 flex-1">
+                        <span class="inline-block bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 text-xs font-bold px-3 py-1 rounded-full mb-3">${cat}</span>
+                        <h1 class="text-2xl font-bold text-slate-900 dark:text-white leading-tight mb-3">${video.title}</h1>
                         
-                        <div class="flex items-center text-sm text-slate-400 gap-4 mb-6 border-b border-slate-800 pb-6">
+                        <div class="flex items-center text-sm text-slate-500 dark:text-slate-400 gap-4 mb-6 border-b border-slate-200 dark:border-slate-800 pb-6">
                             <span class="flex items-center gap-1.5"><i class="ph ph-eye text-lg"></i> ${video.views || 0} views</span>
                             <span class="flex items-center gap-1.5"><i class="ph ph-clock text-lg"></i> ${video.duration || 'N/A'}</span>
                             <span class="flex items-center gap-1.5"><i class="ph ph-calendar text-lg"></i> ${formatDate(video.createdAt)}</span>
@@ -798,18 +810,18 @@
                         <div class="space-y-6">
                             ${video.description ? `
                             <div>
-                                <h3 class="text-lg font-semibold text-white mb-2 flex items-center gap-2">
+                                <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-2 flex items-center gap-2">
                                     <i class="ph-fill ph-info text-blue-500"></i> Description
                                 </h3>
-                                <p class="text-slate-300 text-sm leading-relaxed">${video.description.replace(/\n/g, '<br/>')}</p>
+                                <p class="text-slate-700 dark:text-slate-300 text-sm leading-relaxed">${video.description.replace(/\n/g, '<br/>')}</p>
                             </div>
                             ` : ''}
 
-                            <div class="bg-slate-900 rounded-2xl p-5 border border-slate-800">
-                                <h3 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                            <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm dark:shadow-none">
+                                <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
                                     <i class="ph-fill ph-book-open-text text-blue-500"></i> Step-by-Step Guide
                                 </h3>
-                                <div class="text-slate-300 text-sm leading-relaxed space-y-2">
+                                <div class="text-slate-700 dark:text-slate-300 text-sm leading-relaxed space-y-2">
                                     ${formatGuide(video.guide)}
                                 </div>
                             </div>
@@ -828,23 +840,23 @@
                 return '';
             }
             return `
-                <div class="flex flex-col items-center justify-center min-h-[80vh] p-6 fade-in">
-                    <div class="w-full max-w-sm bg-slate-900 border border-slate-800 p-8 rounded-3xl shadow-2xl">
+                <div class="flex flex-col items-center justify-center h-full p-6 fade-in">
+                    <div class="w-full max-w-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-8 rounded-3xl shadow-xl dark:shadow-2xl">
                         <div class="text-center mb-8">
-                            <div class="w-16 h-16 bg-blue-600/20 text-blue-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                            <div class="w-16 h-16 bg-blue-100 dark:bg-blue-600/20 text-blue-600 dark:text-blue-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
                                 <i class="ph-fill ph-shield-check text-4xl"></i>
                             </div>
-                            <h2 class="text-2xl font-bold text-white">Admin Access</h2>
-                            <p class="text-sm text-slate-400 mt-2">PIN: 1234</p>
+                            <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Admin Access</h2>
+                            <p class="text-sm text-slate-500 dark:text-slate-400 mt-2">PIN: 1234</p>
                         </div>
                         
                         <div class="space-y-4">
                             <input type="password" id="adminPin" placeholder="Enter PIN" 
-                                class="w-full bg-slate-950 text-center tracking-[0.5em] text-white rounded-xl py-4 border border-slate-800 focus:border-blue-500 outline-none transition-colors">
-                            <button data-action="do-login" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3.5 rounded-xl transition-colors shadow-lg shadow-blue-900/50">
+                                class="w-full bg-slate-50 dark:bg-slate-950 text-center tracking-[0.5em] text-slate-900 dark:text-white rounded-xl py-4 border border-slate-200 dark:border-slate-800 focus:border-blue-500 outline-none transition-colors">
+                            <button data-action="do-login" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3.5 rounded-xl transition-colors shadow-lg shadow-blue-500/30 dark:shadow-blue-900/50">
                                 Verify Access
                             </button>
-                            <button data-action="nav-home" class="w-full text-slate-500 hover:text-white py-2 text-sm">Cancel</button>
+                            <button data-action="nav-home" class="w-full text-slate-500 hover:text-slate-900 dark:hover:text-white py-2 text-sm">Cancel</button>
                         </div>
                     </div>
                 </div>
@@ -860,59 +872,59 @@
             return `
                 <div class="fade-in p-6 pb-10">
                     <div class="flex justify-between items-center mb-6 mt-2">
-                        <h1 class="text-2xl font-bold text-white flex items-center gap-2">
+                        <h1 class="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
                             <i class="ph-fill ph-squares-four text-blue-500"></i> Dashboard
                         </h1>
-                        <button data-action="do-logout" class="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 hover:text-red-400 transition-colors">
+                        <button data-action="do-logout" class="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors">
                             <i class="ph ph-sign-out text-xl"></i>
                         </button>
                     </div>
 
                     <div class="grid grid-cols-2 gap-4 mb-8">
-                        <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl">
+                        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl shadow-sm dark:shadow-none">
                             <i class="ph-fill ph-video-camera text-blue-500 text-2xl mb-2"></i>
-                            <div class="text-2xl font-bold text-white">${totalVideos}</div>
-                            <div class="text-xs text-slate-400">Videos</div>
+                            <div class="text-2xl font-bold text-slate-900 dark:text-white">${totalVideos}</div>
+                            <div class="text-xs text-slate-500 dark:text-slate-400">Videos</div>
                         </div>
-                        <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl">
+                        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl shadow-sm dark:shadow-none">
                             <i class="ph-fill ph-wrench text-amber-500 text-2xl mb-2"></i>
-                            <div class="text-2xl font-bold text-white">${totalTools}</div>
-                            <div class="text-xs text-slate-400">Tools / APKs</div>
+                            <div class="text-2xl font-bold text-slate-900 dark:text-white">${totalTools}</div>
+                            <div class="text-xs text-slate-500 dark:text-slate-400">Tools / APKs</div>
                         </div>
-                        <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl">
+                        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl shadow-sm dark:shadow-none">
                             <i class="ph-fill ph-eye text-emerald-500 text-2xl mb-2"></i>
-                            <div class="text-2xl font-bold text-white">${totalViews}</div>
-                            <div class="text-xs text-slate-400">Total Views</div>
+                            <div class="text-2xl font-bold text-slate-900 dark:text-white">${totalViews}</div>
+                            <div class="text-xs text-slate-500 dark:text-slate-400">Total Views</div>
                         </div>
-                        <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl">
+                        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl shadow-sm dark:shadow-none">
                             <i class="ph-fill ph-download-simple text-purple-500 text-2xl mb-2"></i>
-                            <div class="text-2xl font-bold text-white">${totalDownloads}</div>
-                            <div class="text-xs text-slate-400">Total DLs</div>
+                            <div class="text-2xl font-bold text-slate-900 dark:text-white">${totalDownloads}</div>
+                            <div class="text-xs text-slate-500 dark:text-slate-400">Total DLs</div>
                         </div>
                     </div>
 
                     <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">Management</h2>
                     <div class="space-y-3">
-                        <button data-action="nav-admin-videos" class="w-full bg-slate-900 border border-slate-800 hover:border-blue-500 p-4 rounded-2xl flex items-center justify-between group">
+                        <button data-action="nav-admin-videos" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-blue-500 p-4 rounded-2xl flex items-center justify-between group shadow-sm dark:shadow-none">
                             <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-full bg-blue-500/10 text-blue-500 flex items-center justify-center"><i class="ph-fill ph-video-camera text-xl"></i></div>
-                                <div class="text-left"><div class="text-white font-medium">Manage Videos</div><div class="text-xs text-slate-400">Add, edit, remove</div></div>
+                                <div class="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-500/10 text-blue-600 dark:text-blue-500 flex items-center justify-center"><i class="ph-fill ph-video-camera text-xl"></i></div>
+                                <div class="text-left"><div class="text-slate-900 dark:text-white font-medium">Manage Videos</div><div class="text-xs text-slate-500 dark:text-slate-400">Add, edit, remove</div></div>
                             </div>
-                            <i class="ph ph-caret-right text-slate-600 group-hover:text-blue-500"></i>
+                            <i class="ph ph-caret-right text-slate-400 dark:text-slate-600 group-hover:text-blue-500"></i>
                         </button>
-                        <button data-action="nav-admin-tools" class="w-full bg-slate-900 border border-slate-800 hover:border-amber-500 p-4 rounded-2xl flex items-center justify-between group">
+                        <button data-action="nav-admin-tools" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-amber-500 p-4 rounded-2xl flex items-center justify-between group shadow-sm dark:shadow-none">
                             <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-full bg-amber-500/10 text-amber-500 flex items-center justify-center"><i class="ph-fill ph-wrench text-xl"></i></div>
-                                <div class="text-left"><div class="text-white font-medium">Manage Tools</div><div class="text-xs text-slate-400">Upload APKs/Links</div></div>
+                                <div class="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-500/10 text-amber-600 dark:text-amber-500 flex items-center justify-center"><i class="ph-fill ph-wrench text-xl"></i></div>
+                                <div class="text-left"><div class="text-slate-900 dark:text-white font-medium">Manage Tools</div><div class="text-xs text-slate-500 dark:text-slate-400">Upload APKs/Links</div></div>
                             </div>
-                            <i class="ph ph-caret-right text-slate-600 group-hover:text-amber-500"></i>
+                            <i class="ph ph-caret-right text-slate-400 dark:text-slate-600 group-hover:text-amber-500"></i>
                         </button>
-                        <button data-action="nav-admin-settings" class="w-full bg-slate-900 border border-slate-800 hover:border-purple-500 p-4 rounded-2xl flex items-center justify-between group">
+                        <button data-action="nav-admin-settings" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-purple-500 p-4 rounded-2xl flex items-center justify-between group shadow-sm dark:shadow-none">
                             <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-full bg-purple-500/10 text-purple-500 flex items-center justify-center"><i class="ph-fill ph-gear text-xl"></i></div>
-                                <div class="text-left"><div class="text-white font-medium">Support Links</div><div class="text-xs text-slate-400">Update Telegram URLs</div></div>
+                                <div class="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-500/10 text-purple-600 dark:text-purple-500 flex items-center justify-center"><i class="ph-fill ph-gear text-xl"></i></div>
+                                <div class="text-left"><div class="text-slate-900 dark:text-white font-medium">Support Links</div><div class="text-xs text-slate-500 dark:text-slate-400">Update Telegram URLs</div></div>
                             </div>
-                            <i class="ph ph-caret-right text-slate-600 group-hover:text-purple-500"></i>
+                            <i class="ph ph-caret-right text-slate-400 dark:text-slate-600 group-hover:text-purple-500"></i>
                         </button>
                     </div>
                 </div>
@@ -923,26 +935,26 @@
             return `
                 <div class="fade-in p-6 pb-20">
                     <div class="flex items-center justify-between mb-6">
-                        <button data-action="nav-admin-dashboard" class="text-slate-400 hover:text-white"><i class="ph ph-arrow-left text-2xl"></i></button>
-                        <h1 class="text-xl font-bold text-white">Manage Videos</h1>
-                        <button data-action="modal-video-add" class="bg-blue-600 text-white px-4 py-2 rounded-xl flex items-center justify-center hover:bg-blue-500 font-medium gap-2 shadow-lg shadow-blue-900/50"><i class="ph ph-plus-bold"></i> Add Video</button>
+                        <button data-action="nav-admin-dashboard" class="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"><i class="ph ph-arrow-left text-2xl"></i></button>
+                        <h1 class="text-xl font-bold text-slate-900 dark:text-white">Manage Videos</h1>
+                        <button data-action="modal-video-add" class="bg-blue-600 text-white px-4 py-2 rounded-xl flex items-center justify-center hover:bg-blue-500 font-medium gap-2 shadow-lg shadow-blue-500/30 dark:shadow-blue-900/50"><i class="ph ph-plus-bold"></i> Add Video</button>
                     </div>
 
                     <div class="space-y-3">
                         ${state.videos.length === 0 ? '<div class="text-center text-slate-500 py-10">No videos found. Click + to add.</div>' : ''}
                         ${state.videos.map(v => `
-                            <div class="bg-slate-900 border border-slate-800 p-3 rounded-2xl flex gap-3 items-center">
-                                <img src="${v.thumbnail}" class="w-16 h-12 object-cover rounded-lg bg-slate-800 shrink-0">
+                            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 rounded-2xl flex gap-3 items-center shadow-sm dark:shadow-none">
+                                <img src="${v.thumbnail}" class="w-16 h-12 object-cover rounded-lg bg-slate-100 dark:bg-slate-800 shrink-0">
                                 <div class="flex-1 min-w-0">
-                                    <div class="text-sm text-white font-medium truncate">${v.title}</div>
-                                    <div class="text-[10px] text-slate-400 flex items-center gap-2 mt-1">
-                                        <span class="${v.status === 'published' ? 'text-emerald-400' : 'text-amber-400'}">${v.status}</span>
-                                        ${v.featured ? '<span class="text-amber-400"><i class="ph-fill ph-star"></i></span>' : ''}
+                                    <div class="text-sm text-slate-900 dark:text-white font-medium truncate">${v.title}</div>
+                                    <div class="text-[10px] text-slate-500 dark:text-slate-400 flex items-center gap-2 mt-1">
+                                        <span class="${v.status === 'published' ? 'text-emerald-500 dark:text-emerald-400' : 'text-amber-500 dark:text-amber-400'}">${v.status}</span>
+                                        ${v.featured ? '<span class="text-amber-500 dark:text-amber-400"><i class="ph-fill ph-star"></i></span>' : ''}
                                     </div>
                                 </div>
                                 <div class="flex gap-1 flex-col sm:flex-row">
-                                    <button data-action="modal-video-edit" data-id="${v.id}" class="p-2 text-blue-400 hover:bg-blue-500/10 rounded-lg"><i class="ph ph-pencil-simple"></i></button>
-                                    <button data-action="delete-video" data-id="${v.id}" class="p-2 text-red-400 hover:bg-red-500/10 rounded-lg"><i class="ph ph-trash"></i></button>
+                                    <button data-action="modal-video-edit" data-id="${v.id}" class="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg"><i class="ph ph-pencil-simple"></i></button>
+                                    <button data-action="delete-video" data-id="${v.id}" class="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg"><i class="ph ph-trash"></i></button>
                                 </div>
                             </div>
                         `).join('')}
@@ -955,27 +967,27 @@
             return `
                 <div class="fade-in p-6 pb-20">
                     <div class="flex items-center justify-between mb-6">
-                        <button data-action="nav-admin-dashboard" class="text-slate-400 hover:text-white"><i class="ph ph-arrow-left text-2xl"></i></button>
-                        <h1 class="text-xl font-bold text-white">Manage Tools</h1>
-                        <button data-action="modal-tool-add" class="bg-amber-600 text-white px-4 py-2 rounded-xl flex items-center justify-center hover:bg-amber-500 font-medium gap-2 shadow-lg shadow-amber-900/50"><i class="ph ph-plus-bold"></i> Add Tool</button>
+                        <button data-action="nav-admin-dashboard" class="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"><i class="ph ph-arrow-left text-2xl"></i></button>
+                        <h1 class="text-xl font-bold text-slate-900 dark:text-white">Manage Tools</h1>
+                        <button data-action="modal-tool-add" class="bg-amber-500 dark:bg-amber-600 text-white px-4 py-2 rounded-xl flex items-center justify-center hover:bg-amber-600 dark:hover:bg-amber-500 font-medium gap-2 shadow-lg shadow-amber-500/30 dark:shadow-amber-900/50"><i class="ph ph-plus-bold"></i> Add Tool</button>
                     </div>
 
                     <div class="space-y-3">
                         ${state.tools.length === 0 ? '<div class="text-center text-slate-500 py-10">No tools found. Click + to add.</div>' : ''}
                         ${state.tools.map(t => `
-                            <div class="bg-slate-900 border border-slate-800 p-3 rounded-2xl flex gap-3 items-center">
-                                <img src="${t.thumbnail}" class="w-12 h-12 object-contain rounded-xl bg-slate-950 p-1 border border-slate-700/50 shrink-0">
+                            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 rounded-2xl flex gap-3 items-center shadow-sm dark:shadow-none">
+                                <img src="${t.thumbnail}" class="w-12 h-12 object-contain rounded-xl bg-slate-50 dark:bg-slate-950 p-1 border border-slate-200 dark:border-slate-700/50 shrink-0">
                                 <div class="flex-1 min-w-0">
-                                    <div class="text-sm text-white font-medium truncate">${t.title}</div>
-                                    <div class="text-[10px] text-slate-400 flex items-center gap-2 mt-1">
-                                        <span class="bg-slate-800 px-1.5 py-0.5 rounded">${t.fileType}</span>
-                                        <span class="text-slate-400">${formatSize(t.size)}</span>
-                                        <span class="${t.status === 'published' ? 'text-emerald-400' : 'text-amber-400'}">${t.status}</span>
+                                    <div class="text-sm text-slate-900 dark:text-white font-medium truncate">${t.title}</div>
+                                    <div class="text-[10px] text-slate-500 dark:text-slate-400 flex items-center gap-2 mt-1">
+                                        <span class="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">${t.fileType}</span>
+                                        <span class="text-slate-500 dark:text-slate-400">${formatSize(t.size)}</span>
+                                        <span class="${t.status === 'published' ? 'text-emerald-500 dark:text-emerald-400' : 'text-amber-500 dark:text-amber-400'}">${t.status}</span>
                                     </div>
                                 </div>
                                 <div class="flex gap-1">
-                                    <button data-action="modal-tool-edit" data-id="${t.id}" class="p-2 text-blue-400 hover:bg-blue-500/10 rounded-lg"><i class="ph ph-pencil-simple"></i></button>
-                                    <button data-action="delete-tool" data-id="${t.id}" class="p-2 text-red-400 hover:bg-red-500/10 rounded-lg"><i class="ph ph-trash"></i></button>
+                                    <button data-action="modal-tool-edit" data-id="${t.id}" class="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg"><i class="ph ph-pencil-simple"></i></button>
+                                    <button data-action="delete-tool" data-id="${t.id}" class="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg"><i class="ph ph-trash"></i></button>
                                 </div>
                             </div>
                         `).join('')}
@@ -988,50 +1000,50 @@
             return `
                 <div class="fade-in p-6 pb-20">
                     <div class="flex items-center gap-3 mb-8">
-                        <button data-action="nav-admin-dashboard" class="text-slate-400 hover:text-white"><i class="ph ph-arrow-left text-2xl"></i></button>
-                        <h1 class="text-xl font-bold text-white">Settings</h1>
+                        <button data-action="nav-admin-dashboard" class="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"><i class="ph ph-arrow-left text-2xl"></i></button>
+                        <h1 class="text-xl font-bold text-slate-900 dark:text-white">Settings</h1>
                     </div>
 
                     <div class="space-y-4">
                         <!-- Notice Banner Settings -->
-                        <div class="bg-slate-900 border-2 border-dashed border-slate-700 p-5 rounded-2xl mb-6 text-center">
+                        <div class="bg-white dark:bg-slate-900 border-2 border-dashed border-slate-300 dark:border-slate-700 p-5 rounded-2xl mb-6 text-center">
                             <i class="ph-fill ph-image text-3xl text-blue-500 mb-2"></i>
-                            <h2 class="text-sm font-bold text-slate-200 mb-2">Notice Banner (16:9)</h2>
-                            <div class="text-[10px] text-slate-400 mb-4">Upload image to Postimages.org and paste the Direct Link here</div>
+                            <h2 class="text-sm font-bold text-slate-800 dark:text-slate-200 mb-2">Notice Banner (16:9)</h2>
+                            <div class="text-[10px] text-slate-500 dark:text-slate-400 mb-4">Upload image to Postimages.org and paste the Direct Link here</div>
                             
-                            <input type="url" id="set-banner-url" value="${state.settings.noticeBanner || ''}" placeholder="https://..." class="w-full bg-slate-950 text-white rounded-xl px-4 py-3 border border-slate-800 focus:border-purple-500 outline-none text-sm">
+                            <input type="url" id="set-banner-url" value="${state.settings.noticeBanner || ''}" placeholder="https://..." class="w-full bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white rounded-xl px-4 py-3 border border-slate-200 dark:border-slate-800 focus:border-purple-500 outline-none text-sm">
                         </div>
 
                         <!-- Support Links Settings -->
                         <div>
-                            <label class="block text-xs font-medium text-slate-400 mb-1">Telegram Support URL</label>
-                            <input type="url" id="set-support" value="${state.settings.telegramSupport}" class="w-full bg-slate-900 text-white rounded-xl px-4 py-3 border border-slate-800 focus:border-purple-500 outline-none text-sm">
+                            <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Telegram Support URL</label>
+                            <input type="url" id="set-support" value="${state.settings.telegramSupport}" class="w-full bg-white dark:bg-slate-900 text-slate-900 dark:text-white rounded-xl px-4 py-3 border border-slate-200 dark:border-slate-800 focus:border-purple-500 outline-none text-sm shadow-sm dark:shadow-none">
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-slate-400 mb-1">Official Channel URL</label>
-                            <input type="url" id="set-channel" value="${state.settings.officialChannel}" class="w-full bg-slate-900 text-white rounded-xl px-4 py-3 border border-slate-800 focus:border-purple-500 outline-none text-sm">
+                            <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Official Channel URL</label>
+                            <input type="url" id="set-channel" value="${state.settings.officialChannel}" class="w-full bg-white dark:bg-slate-900 text-slate-900 dark:text-white rounded-xl px-4 py-3 border border-slate-200 dark:border-slate-800 focus:border-purple-500 outline-none text-sm shadow-sm dark:shadow-none">
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-slate-400 mb-1">Start Working URL</label>
-                            <input type="url" id="set-work" value="${state.settings.startWorking}" class="w-full bg-slate-900 text-white rounded-xl px-4 py-3 border border-slate-800 focus:border-purple-500 outline-none text-sm">
+                            <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Start Working URL</label>
+                            <input type="url" id="set-work" value="${state.settings.startWorking}" class="w-full bg-white dark:bg-slate-900 text-slate-900 dark:text-white rounded-xl px-4 py-3 border border-slate-200 dark:border-slate-800 focus:border-purple-500 outline-none text-sm shadow-sm dark:shadow-none">
                         </div>
                         
-                        <button data-action="save-settings" class="w-full mt-4 bg-purple-600 hover:bg-purple-500 text-white font-bold py-3.5 rounded-xl transition-colors shadow-lg shadow-purple-900/30">
+                        <button data-action="save-settings" class="w-full mt-4 bg-purple-600 hover:bg-purple-500 text-white font-bold py-3.5 rounded-xl transition-colors shadow-lg shadow-purple-500/30 dark:shadow-purple-900/30">
                             Save Changes
                         </button>
                     </div>
 
-                    <div class="mt-8 pt-6 border-t border-slate-800">
-                        <h2 class="text-sm font-semibold text-slate-400 mb-4">Categories</h2>
+                    <div class="mt-8 pt-6 border-t border-slate-200 dark:border-slate-800">
+                        <h2 class="text-sm font-semibold text-slate-500 dark:text-slate-400 mb-4">Categories</h2>
                         <div class="flex gap-2 mb-4">
-                            <input type="text" id="new-cat" placeholder="New Category" class="flex-1 bg-slate-900 text-white rounded-xl px-4 py-2 border border-slate-800 outline-none text-sm">
+                            <input type="text" id="new-cat" placeholder="New Category" class="flex-1 bg-white dark:bg-slate-900 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-200 dark:border-slate-800 outline-none text-sm shadow-sm dark:shadow-none">
                             <button data-action="add-category" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-medium">Add</button>
                         </div>
                         <div class="space-y-2">
                             ${state.categories.map(c => `
-                                <div class="flex items-center justify-between bg-slate-900 p-3 rounded-xl border border-slate-800">
-                                    <span class="text-sm text-slate-200">${c.name}</span>
-                                    <button data-action="delete-category" data-id="${c.id}" class="text-red-400 hover:bg-red-500/10 p-1.5 rounded"><i class="ph ph-x"></i></button>
+                                <div class="flex items-center justify-between bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm dark:shadow-none">
+                                    <span class="text-sm text-slate-800 dark:text-slate-200">${c.name}</span>
+                                    <button data-action="delete-category" data-id="${c.id}" class="text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 p-1.5 rounded"><i class="ph ph-x"></i></button>
                                 </div>
                             `).join('')}
                         </div>
@@ -1044,8 +1056,8 @@
         function showModal(html) {
             const container = document.getElementById('modal-container');
             container.innerHTML = `
-                <div class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[100] flex items-end sm:items-center justify-center fade-in">
-                    <div class="bg-slate-900 w-full max-w-md rounded-t-3xl sm:rounded-3xl border border-slate-800 p-6 pb-safe max-h-[90vh] overflow-y-auto no-scrollbar slide-up">
+                <div class="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/80 backdrop-blur-sm z-[100] flex items-end sm:items-center justify-center fade-in">
+                    <div class="bg-white dark:bg-slate-900 w-full max-w-md rounded-t-3xl sm:rounded-3xl border border-slate-200 dark:border-slate-800 p-6 pb-safe max-h-[90vh] overflow-y-auto no-scrollbar slide-up">
                         ${html}
                     </div>
                 </div>
@@ -1061,61 +1073,61 @@
             
             showModal(`
                 <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-xl font-bold text-white">${isEdit ? 'Edit Video' : 'Add Video'}</h2>
-                    <button data-action="close-modal" class="text-slate-400 hover:text-white"><i class="ph ph-x text-2xl"></i></button>
+                    <h2 class="text-xl font-bold text-slate-900 dark:text-white">${isEdit ? 'Edit Video' : 'Add Video'}</h2>
+                    <button data-action="close-modal" class="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"><i class="ph ph-x text-2xl"></i></button>
                 </div>
                 <form id="videoForm" class="space-y-4">
                     <input type="hidden" id="v_id" value="${v.id || ''}">
                     <div>
-                        <label class="block text-xs font-medium text-slate-400 mb-1">Video Title</label>
-                        <input type="text" id="v_title" required value="${v.title || ''}" class="w-full bg-slate-950 text-white rounded-xl px-4 py-3 border border-slate-800 focus:border-blue-500 outline-none text-sm">
+                        <label class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Video Title</label>
+                        <input type="text" id="v_title" required value="${v.title || ''}" class="w-full bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white rounded-xl px-4 py-3 border border-slate-200 dark:border-slate-800 focus:border-blue-500 outline-none text-sm">
                     </div>
 
-                    <div class="bg-slate-900 border border-slate-700 p-4 rounded-xl">
-                        <label class="block text-sm font-bold text-blue-400 mb-1">YouTube Video Link</label>
+                    <div class="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 p-4 rounded-xl shadow-sm dark:shadow-none">
+                        <label class="block text-sm font-bold text-blue-600 dark:text-blue-400 mb-1">YouTube Video Link</label>
                         <div class="text-[10px] text-slate-500 mb-3">Paste YouTube URL (or direct MP4 link)</div>
-                        <input type="url" id="v_url" value="${v.videoUrl || ''}" placeholder="https://youtube.com/..." class="w-full bg-slate-950 text-white rounded-lg px-3 py-3 border border-slate-800 focus:border-blue-500 outline-none text-sm">
+                        <input type="url" id="v_url" value="${v.videoUrl || ''}" placeholder="https://youtube.com/..." class="w-full bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white rounded-lg px-3 py-3 border border-slate-200 dark:border-slate-800 focus:border-blue-500 outline-none text-sm">
                     </div>
                     
                     <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-xs font-medium text-slate-400 mb-1">Category</label>
-                            <select id="v_category" class="w-full bg-slate-950 text-white rounded-xl px-4 py-3 border border-slate-800 focus:border-blue-500 outline-none text-sm">
+                            <label class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Category</label>
+                            <select id="v_category" class="w-full bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white rounded-xl px-4 py-3 border border-slate-200 dark:border-slate-800 focus:border-blue-500 outline-none text-sm">
                                 ${state.categories.map(c => `<option value="${c.id}" ${v.categoryId === c.id ? 'selected' : ''}>${c.name}</option>`).join('')}
                             </select>
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-slate-400 mb-1">Duration</label>
-                            <input type="text" id="v_duration" value="${v.duration || ''}" placeholder="e.g. 10:00" class="w-full bg-slate-950 text-white rounded-xl px-4 py-3 border border-slate-800 focus:border-blue-500 outline-none text-sm">
+                            <label class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Duration</label>
+                            <input type="text" id="v_duration" value="${v.duration || ''}" placeholder="e.g. 10:00" class="w-full bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white rounded-xl px-4 py-3 border border-slate-200 dark:border-slate-800 focus:border-blue-500 outline-none text-sm">
                         </div>
                     </div>
                     
-                    <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
-                        <label class="block text-xs font-medium text-slate-400 mb-1">Thumbnail Image URL</label>
+                    <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
+                        <label class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Thumbnail Image URL</label>
                         <div class="text-[10px] text-slate-500 mb-3">Leave empty to auto-fetch YouTube thumbnail</div>
-                        <input type="url" id="v_thumb_url" value="${v.thumbnail || ''}" placeholder="https://..." class="w-full bg-slate-900 text-white rounded-lg px-3 py-3 border border-slate-800 outline-none text-sm">
+                        <input type="url" id="v_thumb_url" value="${v.thumbnail || ''}" placeholder="https://..." class="w-full bg-white dark:bg-slate-900 text-slate-900 dark:text-white rounded-lg px-3 py-3 border border-slate-200 dark:border-slate-800 outline-none text-sm">
                     </div>
 
-                    <div class="flex items-center justify-between bg-slate-950 p-3 rounded-xl border border-slate-800">
-                        <label class="text-sm font-medium text-slate-300">Featured Video</label>
-                        <input type="checkbox" id="v_featured" ${v.featured ? 'checked' : ''} class="w-5 h-5 rounded accent-blue-500 bg-slate-800 border-slate-700">
+                    <div class="flex items-center justify-between bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200 dark:border-slate-800">
+                        <label class="text-sm font-medium text-slate-700 dark:text-slate-300">Featured Video</label>
+                        <input type="checkbox" id="v_featured" ${v.featured ? 'checked' : ''} class="w-5 h-5 rounded accent-blue-600 dark:accent-blue-500 bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700">
                     </div>
 
                     <div>
-                        <label class="block text-xs font-medium text-slate-400 mb-1">Status</label>
-                        <select id="v_status" class="w-full bg-slate-950 text-white rounded-xl px-4 py-3 border border-slate-800 outline-none text-sm">
+                        <label class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Status</label>
+                        <select id="v_status" class="w-full bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white rounded-xl px-4 py-3 border border-slate-200 dark:border-slate-800 outline-none text-sm">
                             <option value="published" ${v.status === 'published' ? 'selected' : ''}>Published</option>
                             <option value="hidden" ${v.status === 'hidden' ? 'selected' : ''}>Hidden</option>
                         </select>
                     </div>
                     
                     <div>
-                        <label class="block text-xs font-medium text-slate-400 mb-1">Short Description</label>
-                        <textarea id="v_desc" rows="2" class="w-full bg-slate-950 text-white rounded-xl px-4 py-3 border border-slate-800 focus:border-blue-500 outline-none text-sm resize-none">${v.description || ''}</textarea>
+                        <label class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Short Description</label>
+                        <textarea id="v_desc" rows="2" class="w-full bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white rounded-xl px-4 py-3 border border-slate-200 dark:border-slate-800 focus:border-blue-500 outline-none text-sm resize-none">${v.description || ''}</textarea>
                     </div>
                     <div>
-                        <label class="block text-xs font-medium text-slate-400 mb-1">Step-by-Step Guide (**bold**)</label>
-                        <textarea id="v_guide" rows="4" class="w-full bg-slate-950 text-white rounded-xl px-4 py-3 border border-slate-800 focus:border-blue-500 outline-none text-sm resize-none">${v.guide || ''}</textarea>
+                        <label class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Step-by-Step Guide (**bold**)</label>
+                        <textarea id="v_guide" rows="4" class="w-full bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white rounded-xl px-4 py-3 border border-slate-200 dark:border-slate-800 focus:border-blue-500 outline-none text-sm resize-none">${v.guide || ''}</textarea>
                     </div>
                     <button type="button" data-action="save-video" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3.5 rounded-xl transition-colors mt-4">
                         Save Video
@@ -1130,48 +1142,48 @@
             
             showModal(`
                 <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-xl font-bold text-white">${isEdit ? 'Edit Tool/APK' : 'Add Tool/APK'}</h2>
-                    <button data-action="close-modal" class="text-slate-400 hover:text-white"><i class="ph ph-x text-2xl"></i></button>
+                    <h2 class="text-xl font-bold text-slate-900 dark:text-white">${isEdit ? 'Edit Tool/APK' : 'Add Tool/APK'}</h2>
+                    <button data-action="close-modal" class="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"><i class="ph ph-x text-2xl"></i></button>
                 </div>
                 <form id="toolForm" class="space-y-4">
                     <input type="hidden" id="t_id" value="${t.id || ''}">
                     <div>
-                        <label class="block text-xs font-medium text-slate-400 mb-1">Tool Title</label>
-                        <input type="text" id="t_title" required value="${t.title || ''}" class="w-full bg-slate-950 text-white rounded-xl px-4 py-3 border border-slate-800 focus:border-amber-500 outline-none text-sm">
+                        <label class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Tool Title</label>
+                        <input type="text" id="t_title" required value="${t.title || ''}" class="w-full bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white rounded-xl px-4 py-3 border border-slate-200 dark:border-slate-800 focus:border-amber-500 outline-none text-sm">
                     </div>
                     
-                    <div class="bg-slate-900 border border-slate-700 p-4 rounded-xl">
-                        <label class="block text-sm font-bold text-amber-400 mb-1">External Download Link</label>
+                    <div class="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 p-4 rounded-xl shadow-sm dark:shadow-none">
+                        <label class="block text-sm font-bold text-amber-600 dark:text-amber-400 mb-1">External Download Link</label>
                         <div class="text-[10px] text-slate-500 mb-3">Paste Drive, Mediafire or Direct link</div>
-                        <input type="url" id="t_file_url" value="${t.fileUrl || ''}" placeholder="https://..." class="w-full bg-slate-950 text-white rounded-lg px-3 py-3 border border-slate-800 focus:border-amber-500 outline-none text-sm">
+                        <input type="url" id="t_file_url" value="${t.fileUrl || ''}" placeholder="https://..." class="w-full bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white rounded-lg px-3 py-3 border border-slate-200 dark:border-slate-800 focus:border-amber-500 outline-none text-sm">
                     </div>
 
                     <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-xs font-medium text-slate-400 mb-1">File Type</label>
-                            <input type="text" id="t_type" value="${t.fileType || 'APK'}" placeholder="APK, ZIP, PDF" class="w-full bg-slate-950 text-white rounded-xl px-4 py-3 border border-slate-800 focus:border-amber-500 outline-none text-sm">
+                            <label class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">File Type</label>
+                            <input type="text" id="t_type" value="${t.fileType || 'APK'}" placeholder="APK, ZIP, PDF" class="w-full bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white rounded-xl px-4 py-3 border border-slate-200 dark:border-slate-800 focus:border-amber-500 outline-none text-sm">
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-slate-400 mb-1">Size (Auto-adds MB)</label>
-                            <input type="text" id="t_size" value="${t.size || ''}" placeholder="e.g. 15" class="w-full bg-slate-950 text-white rounded-xl px-4 py-3 border border-slate-800 outline-none text-sm">
+                            <label class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Size (Auto-adds MB)</label>
+                            <input type="text" id="t_size" value="${t.size || ''}" placeholder="e.g. 15" class="w-full bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white rounded-xl px-4 py-3 border border-slate-200 dark:border-slate-800 outline-none text-sm">
                         </div>
                     </div>
 
-                    <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
-                        <label class="block text-xs font-medium text-slate-400 mb-1">Icon/Thumbnail Image URL</label>
+                    <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
+                        <label class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Icon/Thumbnail Image URL</label>
                         <div class="text-[10px] text-slate-500 mb-3">Paste image link from Postimages.org</div>
-                        <input type="url" id="t_thumb_url" value="${t.thumbnail || ''}" placeholder="https://..." class="w-full bg-slate-900 text-white rounded-lg px-3 py-3 border border-slate-800 outline-none text-sm">
+                        <input type="url" id="t_thumb_url" value="${t.thumbnail || ''}" placeholder="https://..." class="w-full bg-white dark:bg-slate-900 text-slate-900 dark:text-white rounded-lg px-3 py-3 border border-slate-200 dark:border-slate-800 outline-none text-sm">
                     </div>
 
                     <div>
-                        <label class="block text-xs font-medium text-slate-400 mb-1">Status</label>
-                        <select id="t_status" class="w-full bg-slate-950 text-white rounded-xl px-4 py-3 border border-slate-800 outline-none text-sm">
+                        <label class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Status</label>
+                        <select id="t_status" class="w-full bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white rounded-xl px-4 py-3 border border-slate-200 dark:border-slate-800 outline-none text-sm">
                             <option value="published" ${t.status === 'published' ? 'selected' : ''}>Published</option>
                             <option value="hidden" ${t.status === 'hidden' ? 'selected' : ''}>Hidden</option>
                         </select>
                     </div>
 
-                    <button type="button" data-action="save-tool" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-3.5 rounded-xl transition-colors mt-4">
+                    <button type="button" data-action="save-tool" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3.5 rounded-xl transition-colors mt-4">
                         Save Tool
                     </button>
                 </form>
@@ -1185,6 +1197,18 @@
 
             const action = btn.getAttribute('data-action');
             const id = btn.getAttribute('data-id');
+            
+            // Theme Toggle
+            if (action === 'toggle-theme') {
+                document.documentElement.classList.toggle('dark');
+                localStorage.theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+                // Sync Telegram Mini App Header colors
+                if(tg) {
+                    tg.setHeaderColor(document.documentElement.classList.contains('dark') ? '#0f172a' : '#ffffff');
+                    tg.setBackgroundColor(document.documentElement.classList.contains('dark') ? '#020617' : '#f8fafc');
+                }
+                return;
+            }
 
             // Nav
             if (action.startsWith('nav-')) {
@@ -1428,4 +1452,4 @@
 
     </script>
 </body>
-</html> 
+</html>
