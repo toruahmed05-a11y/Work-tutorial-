@@ -299,6 +299,39 @@
             return Math.random().toString(36).substring(2, 10);
         }
 
+        // Generates a random view count between 100 and 4000 (100–4K)
+        function generateRandomViewsRange() {
+            return Math.floor(Math.random() * (4000 - 100 + 1)) + 100;
+        }
+
+        // Returns a persistent, unique Random Views value (100–4000) for each video
+        function getVideoRandomViews(video) {
+            if (!video) return 0;
+            // Use saved randomViews from Firestore when available
+            if (typeof video.randomViews === 'number' && !isNaN(video.randomViews)) {
+                return video.randomViews;
+            }
+            // Deterministic hash fallback based on video.id for existing videos so it never changes on refresh
+            const seedStr = String(video.id || video.title || 'video');
+            let hash = 2166136261;
+            for (let i = 0; i < seedStr.length; i++) {
+                hash ^= seedStr.charCodeAt(i);
+                hash = Math.imul(hash, 16777619);
+            }
+            hash ^= hash >>> 16;
+            hash = Math.imul(hash, 2246822507);
+            hash ^= hash >>> 13;
+            hash = Math.imul(hash, 3266489909);
+            hash ^= hash >>> 16;
+            return 100 + ((hash >>> 0) % 3901);
+        }
+
+        // Calculates Total Views = Random Views + Real Views
+        function getTotalVideoViews(video) {
+            if (!video) return 0;
+            return (Number(video.views) || 0) + getVideoRandomViews(video);
+        }
+
         function extractYTId(url) {
             const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
             const match = url.match(regExp);
@@ -618,7 +651,7 @@
                                 <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100 leading-tight mt-0.5 line-clamp-2">${v.title}</h3>
                             </div>
                             <div class="flex items-center text-xs text-slate-500 gap-3 mt-2">
-                                <span class="flex items-center gap-1"><i class="ph ph-eye"></i> ${v.views || 0}</span>
+                                <span class="flex items-center gap-1"><i class="ph ph-eye"></i> ${getTotalVideoViews(v)}</span>
                                 <span>${formatDate(v.createdAt)}</span>
                             </div>
                         </div>
@@ -802,7 +835,7 @@
                         <h1 class="text-2xl font-bold text-slate-900 dark:text-white leading-tight mb-3">${video.title}</h1>
                         
                         <div class="flex items-center text-sm text-slate-500 dark:text-slate-400 gap-4 mb-6 border-b border-slate-200 dark:border-slate-800 pb-6">
-                            <span class="flex items-center gap-1.5"><i class="ph ph-eye text-lg"></i> ${video.views || 0} views</span>
+                            <span class="flex items-center gap-1.5"><i class="ph ph-eye text-lg"></i> ${getTotalVideoViews(video)} views</span>
                             <span class="flex items-center gap-1.5"><i class="ph ph-clock text-lg"></i> ${video.duration || 'N/A'}</span>
                             <span class="flex items-center gap-1.5"><i class="ph ph-calendar text-lg"></i> ${formatDate(video.createdAt)}</span>
                         </div>
@@ -866,7 +899,7 @@
         function buildAdminDashboard() {
             const totalVideos = state.videos.length;
             const totalTools = state.tools.length;
-            const totalViews = state.videos.reduce((sum, v) => sum + (v.views || 0), 0);
+            const totalViews = state.videos.reduce((sum, v) => sum + getTotalVideoViews(v), 0);
             const totalDownloads = state.tools.reduce((sum, t) => sum + (t.downloads || 0), 0);
 
             return `
@@ -1165,7 +1198,7 @@
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Size (Auto-adds MB)</label>
-                            <input type="text" id="t_size" value="${t.size || ''}" placeholder="e.g. 15" class="w-full bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white rounded-xl px-4 py-3 border border-slate-200 dark:border-slate-800 outline-none text-sm">
+                            <input type="text" id="t_size" value="${t.size || ''}" placeholder="e.g. 15" class="w-full bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white rounded-xl px-4 py-3 border border-slate-200 dark:border-slate-800 focus:border-amber-500 outline-none text-sm">
                         </div>
                     </div>
 
@@ -1320,6 +1353,12 @@
                         payload.id = docId;
                         payload.createdAt = Date.now();
                         payload.views = 0;
+                        payload.randomViews = generateRandomViewsRange();
+                    } else {
+                        const existingVideo = state.videos.find(x => x.id === formId);
+                        if (existingVideo && typeof existingVideo.randomViews !== 'number') {
+                            payload.randomViews = getVideoRandomViews(existingVideo);
+                        }
                     }
 
                     await setDoc(doc(getCollectionPath('videos'), docId), payload, { merge: true });
